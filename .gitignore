@@ -1,0 +1,12 @@
+.bundle
+.yardoc
+*.rbc
+*.so
+tmp
+doc
+Makefile
+mkmf.log
+*.gem
+*~
+*.o
+Gemfile.lock

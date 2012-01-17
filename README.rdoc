@@ -1,0 +1,48 @@
+
+= ruby-wbem
+
+* http://github.com/kkaempf/ruby-wbem
+
+== INTRODUCTION
+
+ruby-wbem provides an abstraction layer on top of ruby-sfcc (CIM/XML)
+and openwsman (WS-Management)
+
+You can use it to connect to any CIMOM talking CIM-XML or WS-Management
+
+== Requirements
+
+=== Ruby interpreters
+
+ruby-wbem has been built and the testsuite ran against:
+  
+  * ruby 1.8.7
+  * ruby 1.9.2
+  
+== Quick Start
+
+You can create a gem by running rake gem.
+
+See the testsuite for more examples. Or run rake docs.
+
+    require 'rubygems'
+    require 'wbem'
+
+    client = Wbem.connect('http://user:password@hostname:5988')
+    client.namespaces.each do |ns|
+      puts "Namespace: #{ns}"
+    end
+
+== Links
+
+=== Documentation
+
+* http://rdoc.info/projects/kkaempf/ruby-wbem
+
+=== Code Metrics
+
+* http://getcaliper.com/caliper/project?repo=git%3A%2F%2Fgithub.com%2Fkkaempf%2Fruby-wbem.git
+
+== Authors
+
+* Klaus Kämpf <kkaempf@suse.de>
