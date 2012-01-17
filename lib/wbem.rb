@@ -1,3 +1,13 @@
+#
+# wbem.rb
+#
+# A CIM client abstraction layer on top of sfcc (cim/xml) and openwsman (WS-Management)
+#
+# Copyright (c) 2011, SUSE Linux Products GmbH
+# Written by Klaus Kaempf <kkaempf@suse.de>
+#
+# Licensed under the MIT license
+#
 module Wbem
   @@debug = nil
   def Wbem.debug
@@ -23,7 +33,7 @@ module Wbem
     # else    - probe connection (cim/xml first)
     #
     def self.connect uri, protocol = nil
-      STDERR.puts "Wbem::Client.connect(#{uri},#{protocol})" if Wbem.debug
+      STDERR.puts "Wbem::Client.connect(#{uri},#{protocol})"
       u = uri.is_a?(URI) ? uri : URI.parse(uri)
       case protocol
       when :wsman
@@ -31,7 +41,6 @@ module Wbem
       when :cimxml
         return CimxmlClient.new u
       end
-      STDERR.puts "no connect, check known ports"
       # no connect, check known ports
       case u.port
       when 8888, 8889, 5985, 5986
@@ -39,7 +48,7 @@ module Wbem
       when 5988, 5989
         return CimxmlClient.new u
       end
-      STDERR.puts "no known ports"
+#      STDERR.puts "no known ports"
       port = u.port # keep orig port as we change u.port below
       [:wsman, :cimxml].each do |protocol|
         # enforce port if uri provides scheme and host only
@@ -51,7 +60,7 @@ module Wbem
         end
         c = Wbem::Client.connect u, protocol
         if c
-          STDERR.puts "Connect #{u} as #{c}"
+#          STDERR.puts "Connect #{u} as #{c}"
           return c
         end
       end
