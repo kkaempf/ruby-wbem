@@ -12,10 +12,31 @@ require "wbem/wbem"
 module Wbem
 class CimxmlClient < WbemClient
   require "sfcc"
+private
+  #
+  # identify client
+  # return identification string
+  # on error return nil and set @response to http response code
+  #
+  def _identify
+    # sfcb has /root/interop:CIM_ObjectManager
+    sfcb_op = objectpath "root/interop", "CIM_ObjectManager"
+    begin
+      @client.instances(sfcb_op) do |inst|
+        @product = inst.Description.text
+        break
+      end
+    rescue Sfcc::Cim::ErrorInvalidClass, Sfcc::Cim::ErrorInvalidNamespace
+      # not sfcb
+      raise "Unknown CIMOM"
+    end
+  end
+public
 
   def initialize url
     super url
     @client = Sfcc::Cim::Client.connect url
+    _identify
   end
   
   def objectpath namespace, classname = nil
@@ -23,19 +44,10 @@ class CimxmlClient < WbemClient
   end
 
   #
-  # identify client
-  # return identification string
-  # on error return nil and set @response to http response code
-  #
-  def identify
-    "CIM/XML client at #{@url.host}:#{@url.port}"
-  end
-
-  #
   # Return instances for namespace and classname
   #
   def each_instance( ns, cn )
-    op = Sfcc::Cim::ObjectPath.new(ns, cn)
+    op = objectpath ns, cn
     begin
       @client.instances(op).each do |inst|
         yield inst

@@ -31,6 +31,27 @@ end
 
 module Wbem
 class WsmanClient < WbemClient
+private
+  #
+  # WS-Identify
+  # returns Openwsman::XmlDoc
+  #
+  def _identify
+    STDERR.puts "Identify client #{@client} with #{@options}" if Wbem.debug
+    doc = @client.identify( @options )
+    unless doc
+      raise RuntimeError.new "Identify failed: HTTP #{@client.response_code}, Err #{@client.last_error}:#{@client.fault_string}"
+    end
+    if doc.fault?
+      fault = doc.fault
+      STDERR.puts "Fault: #{fault.to_xml}"
+      raise fault.to_s
+    end
+#    STDERR.puts "Return #{doc.to_xml}"
+    doc
+  end
+public
+
   def initialize uri
     super uri
     @url.path = "/wsman" if @url.path.nil? || @url.path.empty?
@@ -47,7 +68,7 @@ class WsmanClient < WbemClient
     @client.transport.auth_method = Openwsman::BASIC_AUTH_STR
     @options = Openwsman::ClientOptions.new
 
-    doc = identify
+    doc = _identify
 #    STDERR.puts doc.to_xml
     @protocol_version = doc.ProtocolVersion.text
     @product_vendor = doc.ProductVendor.text
@@ -103,25 +124,6 @@ class WsmanClient < WbemClient
     Openwsman::ObjectPath.new classname, namespace
   end
 
-  #
-  # WS-Identify
-  # returns Openwsman::XmlDoc
-  #
-  def identify
-    STDERR.puts "Identify client #{@client} with #{@options}" if Wbem.debug
-    doc = @client.identify( @options )
-    unless doc
-      raise RuntimeError.new "Identify failed: HTTP #{@client.response_code}, Err #{@client.last_error}:#{@client.fault_string}"
-    end
-    if doc.fault?
-      fault = doc.fault
-      STDERR.puts "Fault: #{fault.to_xml}"
-      raise fault.to_s
-    end
-#    STDERR.puts "Return #{doc.to_xml}"
-    doc
-  end
-  
   def each_instance( ns, cn )
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999

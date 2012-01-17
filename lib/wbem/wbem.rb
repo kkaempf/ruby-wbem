@@ -15,6 +15,7 @@ module Wbem
     require 'uri'
 
     attr_reader :url, :response
+    attr_reader :product
 
     def initialize url
       @url = (url.is_a? URI) ? url : URI.parse(url)
