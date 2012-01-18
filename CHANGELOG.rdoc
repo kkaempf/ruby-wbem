@@ -1,3 +1,8 @@
+== 0.1.1
+
+* Unify 'identify'
+* Add Client#product
+
 == 0.1.0
 
 * First public version

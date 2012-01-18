@@ -21,9 +21,10 @@ private
   def _identify
     # sfcb has /root/interop:CIM_ObjectManager
     sfcb_op = objectpath "root/interop", "CIM_ObjectManager"
+    STDERR.puts "Looking for #{sfcb_op}"
     begin
-      @client.instances(sfcb_op) do |inst|
-        @product = inst.Description.text
+      @client.instances(sfcb_op).each do |inst|
+        @product = inst.Description
         break
       end
     rescue Sfcc::Cim::ErrorInvalidClass, Sfcc::Cim::ErrorInvalidNamespace
@@ -36,6 +37,7 @@ public
   def initialize url
     super url
     @client = Sfcc::Cim::Client.connect url
+    STDERR.puts "CIMXML.connect #{url} -> #{@client}" if Wbem.debug
     _identify
   end
   
