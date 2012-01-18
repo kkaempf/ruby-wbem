@@ -21,8 +21,6 @@ module Wbem
     require 'wbem/wsman'
     require 'wbem/cimxml'
 
-    attr_reader :url, :response
-
     #
     # Wbem::Client.connect uri, protocol = nil
     #
@@ -34,11 +32,23 @@ module Wbem
     #
     def self.connect uri, protocol = nil
       STDERR.puts "Wbem::Client.connect(#{uri},#{protocol})"
-      u = uri.is_a?(URI) ? uri : URI.parse(uri)
+      unless uri.is_a?(URI)
+        u = URI.parse(uri)
+        protocol_given = uri.match(/:\d/)
+      else
+        u = uri
+        protocol_given = uri.port
+      end
       case protocol
       when :wsman
+        unless protocol_given
+          u.port = (u.scheme == "http") ? 5985 : 5986
+        end
         return WsmanClient.new u
       when :cimxml
+        unless protocol_given
+          u.port = (u.scheme == "http") ? 5988 : 5989
+        end
         return CimxmlClient.new u
       end
       # no connect, check known ports

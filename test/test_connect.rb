@@ -4,6 +4,7 @@ require 'wbem'
 
 class TestConnect < Test::Unit::TestCase
   #def setup
+  #  Wbem.debug = true
   #end
   #def teardown
   #end
@@ -20,14 +21,12 @@ class TestConnect < Test::Unit::TestCase
     c = Wbem::Client.connect("http://wsman:secret@localhost:5988")
     assert c
     assert c.is_a? Wbem::CimxmlClient
-    assert c.product
   end
   def test_connect_port_5985
     # 5985 -> http, wman
     c = Wbem::Client.connect("http://wsman:secret@localhost:5985")
     assert c
     assert c.is_a? Wbem::WsmanClient
-    assert c.product
   end
   def test_connect_port_5989
     # 5989 -> https, cimxml
@@ -41,11 +40,20 @@ class TestConnect < Test::Unit::TestCase
     assert c
     assert c.is_a? Wbem::WsmanClient
   end
+  def test_connect_protocol_cimxml
+    c = Wbem::Client.connect("http://wsman:secret@localhost", :cimxml)
+    assert c
+    assert c.is_a? Wbem::CimxmlClient
+  end
+  def test_connect_protocol_wsman
+    c = Wbem::Client.connect("http://wsman:secret@localhost", :wsman)
+    assert c
+    assert c.is_a? Wbem::WsmanClient
+  end
   def test_connect_protocol_http_cimxml
     c = Wbem::Client.connect("http://wsman:secret@localhost:5988", :cimxml)
     assert c
     assert c.is_a? Wbem::CimxmlClient
-    assert c.product
   end
   def test_connect_protocol_https_cimxml
     c = Wbem::Client.connect("https://wsman:secret@localhost:5989", :cimxml)
@@ -56,7 +64,6 @@ class TestConnect < Test::Unit::TestCase
     c = Wbem::Client.connect("http://wsman:secret@localhost:5985", :wsman)
     assert c
     assert c.is_a? Wbem::WsmanClient
-    assert c.product
   end
   def test_connect_protocol_https_wsman
    c = Wbem::Client.connect("https://wsman:secret@localhost:5986", :wsman)
