@@ -138,26 +138,59 @@ public
     end if items
   end
 
-  def classnames namespace, deep_inheritance
-    # enum_classnames is Openwsman-specific
-    unless @product_vendor =~ /Openwsman/ && @product_version >= "2.2"
-      STDERR.puts "ENUMERATE_CLASS_NAMES unsupported for #{@product_vendor} #{@product_version}"
-      return []
-    end
+  def class_names namespace, deep_inheritance = false
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
     @options.cim_namespace = namespace
-    method = Openwsman::CIM_ACTION_ENUMERATE_CLASS_NAMES
-    uri = Openwsman::XML_NS_CIM_INTRINSIC
-    result = @client.invoke( @options, uri, method )
+    case @product
+    when :openwsman
+      unless @product_version >= "2.2"
+        STDERR.puts "ENUMERATE_CLASS_NAMES unsupported for #{@product_vendor} #{@product_version}, please upgrade"
+        return []
+      end
+      method = Openwsman::CIM_ACTION_ENUMERATE_CLASS_NAMES
+      uri = Openwsman::XML_NS_CIM_INTRINSIC
+      @options.add_selector("DeepInheritance", "True") if deep_inheritance
+      result = @client.invoke( @options, uri, method )
+    when :winrm
+      # see https://github.com/kkaempf/openwsman/blob/master/bindings/ruby/tests/winenum.rb
+      filter = Openwsman::Filter.new
+      query = "select * from meta_class"
+      query << " where __SuperClass is null" unless deep_inheritance
+      filter.wql query
+      uri = "#{@prefix}#{namespace}/*"
+      result = @client.enumerate( @options, filter, uri )
+    else
+      raise "Unsupported for WSMAN product #{@product}"
+    end
+    
     if result.fault?
       puts "Enumerate class names (#{uri}) failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
       return []
     end
-    output = result.body[method]
+    
     classes = []
-    output.each do |c|
-      classes << c.to_s
+    
+    case @product
+    when :openwsman
+      # extract invoke result
+      output = result.body[method]
+      output.each do |c|
+        classes << c.to_s
+      end
+    when :winrm
+      # extract enumerate/pull result
+      loop do
+        output = result.Items
+        output.each do |node|
+          classes << node.name.to_s
+        end if output
+        context = result.context
+        break unless context
+        # get the next chunk
+        result = @client.pull( @options, nil, uri, context)
+        break unless result
+      end
     end
     return classes
   end

@@ -34,8 +34,10 @@ module Wbem
     end
 
 private
+    # assemble all namespaces
     def _namespaces ns, cn
       result = nil
+      # each_instance is the downcall to cimxml or wsman
       each_instance( ns, cn ) do |inst|
         result ||= [ns]
         name = "#{ns}/#{inst.Name}"
@@ -60,8 +62,8 @@ public
     end
 
     # return list of classnames for namespace ns
-    def classnames ns, deep_inheritance=false
-      raise "#{self.class}.classnames not implemented"
+    def class_names ns, deep_inheritance=false
+      raise "#{self.class}.class_names not implemented"
     end
   
     def instance_names classname
