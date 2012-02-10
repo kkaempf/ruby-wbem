@@ -1,3 +1,7 @@
+== 0.2.0
+
+* add 'class_names', supporting WINRM
+
 == 0.1.1
 
 * Unify 'identify'
