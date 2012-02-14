@@ -70,5 +70,9 @@ class TestConnect < Test::Unit::TestCase
     assert c
     assert c.is_a? Wbem::WsmanClient
   end
+  def test_connect_amt
+    c = Wbem::Client.connect("http://admin:P4ssw0rd!@10.10.103.60:16992/wsman", :wsman)
+    assert c
+    assert c.is_a? Wbem::WsmanClient
+  end
 end
-

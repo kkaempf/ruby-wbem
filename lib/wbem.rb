@@ -30,7 +30,7 @@ module Wbem
     # :wsman  - connect via WS-Management
     # else    - probe connection (cim/xml first)
     #
-    def self.connect uri, protocol = nil
+    def self.connect uri, protocol = nil, auth_scheme = nil
       STDERR.puts "Wbem::Client.connect(#{uri},#{protocol})"
       unless uri.is_a?(URI)
         u = URI.parse(uri)
@@ -44,7 +44,7 @@ module Wbem
         unless protocol_given
           u.port = (u.scheme == "http") ? 5985 : 5986
         end
-        return WsmanClient.new u
+        return WsmanClient.new u, auth_scheme
       when :cimxml
         unless protocol_given
           u.port = (u.scheme == "http") ? 5988 : 5989
@@ -54,7 +54,7 @@ module Wbem
       # no connect, check known ports
       case u.port
       when 8888, 8889, 5985, 5986
-        return WsmanClient.new u
+        return WsmanClient.new u, auth_scheme
       when 5988, 5989
         return CimxmlClient.new u
       end
@@ -68,7 +68,7 @@ module Wbem
         if port == 443 && u.scheme == 'https' # https://hostname
           u.port = (protocol == :cimxml) ? 5989: 5986
         end
-        c = Wbem::Client.connect u, protocol
+        c = Wbem::Client.connect u, protocol, auth_scheme
         if c
 #          STDERR.puts "Connect #{u} as #{c}"
           return c

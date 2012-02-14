@@ -52,21 +52,38 @@ private
   end
 public
 
-  def initialize uri
-    super uri
+  def initialize uri, auth_scheme = nil
+    super uri, auth_scheme
     @url.path = "/wsman" if @url.path.nil? || @url.path.empty?
 #    Openwsman::debug = -1
-    STDERR.puts "WsmanClient connecting to #{uri}" if Wbem.debug
+    STDERR.puts "WsmanClient connecting to #{uri}, auth #{@auth_scheme.inspect}" if Wbem.debug
 
     @client = Openwsman::Client.new @url.to_s
     raise "Cannot create Openwsman client" unless @client
     @client.transport.timeout = 5
     @client.transport.verify_peer = 0
     @client.transport.verify_host = 0
-    # FIXME
-#    @client.transport.auth_method = (@url.scheme == 'http') ? Openwsman::BASIC_AUTH_STR : Openwsman::DIGEST_AUTH_STR
-    @client.transport.auth_method = Openwsman::BASIC_AUTH_STR
+    case @auth_scheme
+    when nil
+      @client.transport.auth_method = nil # negotiate
+    when /none/i
+      @client.transport.auth_method = Openwsman::NO_AUTH_STR
+    when /basic/i
+      @client.transport.auth_method = Openwsman::BASIC_AUTH_STR
+    when /digest/i
+      @client.transport.auth_method = Openwsman::DIGEST_AUTH_STR
+    when /pass/i
+      @client.transport.auth_method = Openwsman::PASS_AUTH_STR
+    when /ntlm/i
+      @client.transport.auth_method = Openwsman::NTLM_AUTH_STR
+    when /gss/i
+      @client.transport.auth_method = Openwsman::GSSNEGOTIATE_AUTH_STR
+    else
+      raise "Unknown auth_scheme #{@auth_scheme.inspect}"
+    end
     @options = Openwsman::ClientOptions.new
+    
+    STDERR.puts "auth #{@auth_scheme.inspect} -> #{@client.transport.auth_method}"
 
     doc = _identify
 #    STDERR.puts doc.to_xml
@@ -76,7 +93,7 @@ public
     if Wbem.debug
       STDERR.puts "Protocol_version '#{@protocol_version}'"
       STDERR.puts "Product vendor '#{@product_vendor}'"
-      STDERR.puts  "Product version '#{@product_version}'"
+      STDERR.puts "Product version '#{@product_version}'"
     end
     #
     # Windows winrm 2.0
@@ -100,7 +117,7 @@ public
     end
 
     case @product_vendor
-    when "Microsoft Corporation"
+    when /Microsoft/i
       @prefix = "http://schemas.microsoft.com/wbem/wsman/1/wmi/"
       if @product_version =~ /^OS:\s([\d\.]+)\sSP:\s([\d\.]+)\sStack:\s([\d\.]+)$/
         @product_version = $3
@@ -108,9 +125,15 @@ public
         STDERR.puts "Unrecognized product version #{@product_version}"
       end
       @product = :winrm
-    when "Openwsman Project"
+    when /Openwsman/i
       @prefix = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/"
       @product = :openwsman
+    when /Intel/i
+      @prefix = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/"
+      @product = :iamt
+      if @product_version =~ /^AMT\s(\d\.\d)$/
+        @product_version = $1
+      end
     else
       STDERR.puts "Unsupported WS-Management vendor #{@product_vendor}"
       @prefix = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/"

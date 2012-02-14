@@ -16,9 +16,11 @@ module Wbem
 
     attr_reader :url, :response
     attr_reader :product
+    attr_accessor :auth_scheme
 
-    def initialize url
+    def initialize url, auth_scheme = :basic
       @url = (url.is_a? URI) ? url : URI.parse(url)
+      @auth_scheme = auth_scheme
     end
 
     def response_code

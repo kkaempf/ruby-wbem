@@ -1,3 +1,8 @@
+== 0.2.1
+
+* add 'auth_scheme' to client connection
+* support Intel AMT
+
 == 0.2.0
 
 * add 'class_names', supporting WINRM
