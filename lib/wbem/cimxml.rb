@@ -34,7 +34,7 @@ private
   end
 public
 
-  def initialize url, auth_scheme
+  def initialize url, auth_scheme = nil
     super url, auth_scheme
     @client = Sfcc::Cim::Client.connect url
     STDERR.puts "CIMXML.connect #{url} -> #{@client}" if Wbem.debug
