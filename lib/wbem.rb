@@ -31,7 +31,7 @@ module Wbem
     # else    - probe connection (cim/xml first)
     #
     def self.connect uri, protocol = nil, auth_scheme = nil
-      STDERR.puts "Wbem::Client.connect(#{uri},#{protocol})"
+      STDERR.puts "Wbem::Client.connect(#{uri},#{protocol},#{auth_scheme})"
       unless uri.is_a?(URI)
         u = URI.parse(uri)
         protocol_given = uri.match(/:\d/)
