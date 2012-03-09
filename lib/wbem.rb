@@ -39,7 +39,7 @@ module Wbem
         u = uri
         protocol_given = uri.port
       end
-      case protocol
+      case protocol.to_sym
       when :wsman
         unless protocol_given
           u.port = (u.scheme == "http") ? 5985 : 5986

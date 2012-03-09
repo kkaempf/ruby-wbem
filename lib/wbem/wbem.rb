@@ -20,7 +20,7 @@ module Wbem
 
     def initialize url, auth_scheme = :basic
       @url = (url.is_a? URI) ? url : URI.parse(url)
-      @auth_scheme = auth_scheme
+      @auth_scheme = auth_scheme.to_s.to_sym
     end
 
     def response_code
