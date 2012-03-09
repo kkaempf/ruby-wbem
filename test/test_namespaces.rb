@@ -8,7 +8,7 @@ class TestNamespaces < Test::Unit::TestCase
   #def teardown
   #end
   def test_namespaces_cimxml
-    c = Wbem::Client.connect("http://wsman:secret@localhost:5988", :cimxml)
+    c = Wbem::Client.connect("https://wsman:secret@localhost:5989", :cimxml)
     assert c
     ns = c.namespaces
     assert ns
@@ -16,7 +16,7 @@ class TestNamespaces < Test::Unit::TestCase
     puts ns.inspect
   end
   def test_namespaces_winrm
-    c = Wbem::Client.connect("http://wsman:secret@wsman2003sp2.suse.de:5985", :wsman)
+    c = Wbem::Client.connect("http://wsman:secret@wsman2003sp2.suse.de:5985", :wsman, :basic)
     assert c
     ns = c.namespaces
     assert ns
