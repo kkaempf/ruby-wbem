@@ -68,8 +68,18 @@ public
       raise "#{self.class}.class_names not implemented"
     end
   
-    def instance_names classname
-      raise "#{self.class}.instance_names not implemented"
+    def systems ns="root/cimv2"
+      instance_names ns, (@product == :winrm) ? "Win32_ComputerSystem" : "CIM_ComputerSystem"
     end
+    def services ns="root/cimv2"
+      instance_names ns, (@product == :winrm) ? "Win32_Service" : "CIM_Service"
+    end
+    def networks ns="root/cimv2"
+      instance_names ns, (@product == :winrm) ? "Win32_NetworkAdapter" : "CIM_NetworkAdapter"
+    end
+    def storages ns="root/cimv2"
+      instance_names ns, (@product == :winrm) ? "Win32_DiskDrive" : "CIM_DiskDrive"
+    end
+
   end # Class
 end # Module

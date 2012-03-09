@@ -36,7 +36,8 @@ public
 
   def initialize url, auth_scheme = nil
     super url, auth_scheme
-    @client = Sfcc::Cim::Client.connect url
+    STDERR.puts "CIMXML.connect >#{url}<"
+    @client = Sfcc::Cim::Client.connect( { :uri => url, :verify => false } )
     STDERR.puts "CIMXML.connect #{url} -> #{@client}" if Wbem.debug
     _identify
   end
@@ -78,7 +79,8 @@ public
   #
   # Return list of instance_names (object pathes) for given objectpath
   #
-  def instance_names objectpath
+  def instance_names namespace, classname
+    objectpath = Sfcc::Cim::ObjectPath.new(namespace,classname)
     STDERR.puts "#{@client}.instance_names(#{objectpath})"
     ret = []
     begin

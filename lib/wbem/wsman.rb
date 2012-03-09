@@ -64,7 +64,7 @@ public
     @client.transport.verify_peer = 0
     @client.transport.verify_host = 0
     case @auth_scheme
-    when nil
+    when nil, ""
       @client.transport.auth_method = nil # negotiate
     when /none/i
       @client.transport.auth_method = Openwsman::NO_AUTH_STR
@@ -218,28 +218,23 @@ public
     return classes
   end
 
-  def instance_names object_path
+  def instance_names namespace, classname
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
-    @options.cim_namespace = object_path.namespace
-    # http://schemas.microsoft.com/wbem/wsman/1/wmi/root/cimv2/
-    # CIM=http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2
-    # OpenWBEM=http://schema.openwbem.org/wbem/wscim/1/cim-schema/2
-    # Linux=http://sblim.sf.net/wbem/wscim/1/cim-schema/2
-    # OMC=http://schema.omc-project.org/wbem/wscim/1/cim-schema/2
-    # PG=http://schema.openpegasus.org/wbem/wscim/1/cim-schema/2
-    uri = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/"+object_path.classname
+    @options.cim_namespace = namespace
+    uri = Openwsman::epr_prefix_for(classname, namespace) + "/#{classname}"
     result = @client.enumerate( @options, nil, uri )
     if result.fault?
       puts "Enumerate instances (#{uri}) failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
       return []
     end
-    output = result.body[method]
+    output = result.Items
     instances = []
     output.each do |i|
       instances << i.to_s
     end
     return instances
   end
+  
 end
 end # module
