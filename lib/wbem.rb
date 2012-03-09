@@ -16,6 +16,7 @@ module Wbem
   def Wbem.debug= level
     @@debug = (level == 0) ? nil : level
   end
+
   class Client
     require 'uri'
     require 'wbem/wsman'

@@ -83,7 +83,7 @@ public
     end
     @options = Openwsman::ClientOptions.new
     
-    STDERR.puts "auth #{@auth_scheme.inspect} -> #{@client.transport.auth_method}"
+#    STDERR.puts "auth #{@auth_scheme.inspect} -> #{@client.transport.auth_method}"
 
     doc = _identify
 #    STDERR.puts doc.to_xml
@@ -228,10 +228,12 @@ public
       puts "Enumerate instances (#{uri}) failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
       return []
     end
-    output = result.Items
+
     instances = []
-    output.each do |i|
-      instances << i.to_s
+    result.Items.each do |item|
+      item.add(nil, "namespace", namespace)
+      item.add(nil, "classname", classname)
+      instances << item
     end
     return instances
   end

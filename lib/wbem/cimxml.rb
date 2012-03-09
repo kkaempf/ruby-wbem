@@ -77,7 +77,8 @@ public
   end
 
   #
-  # Return list of instance_names (object pathes) for given objectpath
+  # Return list of Wbem::EndpointReference (object pathes) for instances
+  #  of namespace, classname
   #
   def instance_names namespace, classname
     objectpath = Sfcc::Cim::ObjectPath.new(namespace,classname)
@@ -85,6 +86,7 @@ public
     ret = []
     begin
       @client.instance_names(objectpath).each do |path|
+        path.namespace = namespace # add missing data
 	ret << path
       end
     rescue Sfcc::Cim::ErrorInvalidClass, Sfcc::Cim::ErrorInvalidNamespace
