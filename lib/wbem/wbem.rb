@@ -74,6 +74,9 @@ public
     def services ns="root/cimv2"
       instance_names ns, (@product == :winrm) ? "Win32_Service" : "CIM_Service"
     end
+    def processes ns="root/cimv2"
+      instance_names ns, (@product == :winrm) ? "Win32_Process" : "CIM_Process"
+    end
     def networks ns="root/cimv2"
       instance_names ns, (@product == :winrm) ? "Win32_NetworkAdapter" : "CIM_NetworkAdapter"
     end
