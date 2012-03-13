@@ -7,8 +7,9 @@ begin
 rescue LoadError
   STDERR.puts "Install yard if you want prettier docs"
   require 'rdoc/task'
+  require 'wbem/version'
   Rake::RDocTask.new(:doc) do |rdoc|
     rdoc.rdoc_dir = "doc"
-    rdoc.title = "dm-keeper-adapter #{CIM::VERSION}"
+    rdoc.title = "wbem #{Wbem::VERSION}"
   end
 end

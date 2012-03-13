@@ -1,3 +1,8 @@
+== 0.2.3
+
+* Make #instance_names return generic result
+* Implement #systems, #services, #processes, #networks and #storages
+
 == 0.2.1
 
 * add 'auth_scheme' to client connection
