@@ -39,10 +39,6 @@ See the testsuite for more examples. Or run rake docs.
 
 * http://rdoc.info/projects/kkaempf/ruby-wbem
 
-=== Code Metrics
-
-* http://getcaliper.com/caliper/project?repo=git%3A%2F%2Fgithub.com%2Fkkaempf%2Fruby-wbem.git
-
 == Authors
 
 * Klaus Kämpf <kkaempf@suse.de>
