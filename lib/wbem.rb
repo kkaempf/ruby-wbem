@@ -35,6 +35,7 @@ module Wbem
       STDERR.puts "Wbem::Client.connect(#{uri},#{protocol},#{auth_scheme})"
       unless uri.is_a?(URI)
         u = URI.parse(uri)
+        # u.port will be set in any case, so check the uri for port specification
         protocol_given = uri.match(/:\d/)
       else
         u = uri
@@ -55,9 +56,9 @@ module Wbem
       # no connect, check known ports
       case u.port
       when 8888, 8889, 5985, 5986
-        return WsmanClient.new u, auth_scheme
+        return Wbem::Client.connect u, :wsman, auth_scheme
       when 5988, 5989
-        return CimxmlClient.new u
+        return Wbem::Client.connect u, :cimxml, auth_scheme
       end
 #      STDERR.puts "no known ports"
       port = u.port # keep orig port as we change u.port below
@@ -69,11 +70,7 @@ module Wbem
         if port == 443 && u.scheme == 'https' # https://hostname
           u.port = (protocol == :cimxml) ? 5989: 5986
         end
-        c = Wbem::Client.connect u, protocol, auth_scheme
-        if c
-#          STDERR.puts "Connect #{u} as #{c}"
-          return c
-        end
+        Wbem::Client.connect u, protocol, auth_scheme
       end
     end
 
