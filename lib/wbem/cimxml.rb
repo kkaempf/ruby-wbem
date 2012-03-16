@@ -9,6 +9,18 @@
 #
 require "wbem/wbem"
 
+module Sfcc
+  module Cim
+    class ObjectPath
+      def keys
+        res = []
+        each_key { |key| res << each_key }
+        res
+      end
+    end
+  end
+end
+
 module Wbem
 class CimxmlClient < WbemClient
   require "sfcc"
@@ -34,14 +46,18 @@ private
   end
 public
 
+  #
+  # Initialize a CIMXML client connection
+  #
   def initialize url, auth_scheme = nil
     super url, auth_scheme
-    STDERR.puts "CIMXML.connect >#{url}<"
     @client = Sfcc::Cim::Client.connect( { :uri => url, :verify => false } )
-    STDERR.puts "CIMXML.connect #{url} -> #{@client}" if Wbem.debug
     _identify
   end
   
+  #
+  # Create ObjectPath from namespace and classname
+  #
   def objectpath namespace, classname = nil
     Sfcc::Cim::ObjectPath.new(namespace, classname)
   end

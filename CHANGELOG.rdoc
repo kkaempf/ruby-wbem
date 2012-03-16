@@ -1,3 +1,7 @@
+== 0.2.4
+
+* Make CimXml::ObjectPath and Wsman::EndPointReference behave similar
+
 == 0.2.3
 
 * Make #instance_names return generic result

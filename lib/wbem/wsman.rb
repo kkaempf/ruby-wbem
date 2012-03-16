@@ -27,6 +27,15 @@ module Openwsman
       @classname = classname
     end
   end
+  # Provide Cim::ObjectPath like accessors
+  class EndPointReference
+    alias keys selector_names
+    alias key_count selector_count
+    alias add_key add_selector
+    def each_key
+      keys.each { |key| yield key }
+    end
+  end
 end
 
 module Wbem
@@ -219,6 +228,7 @@ public
   end
 
   def instance_names namespace, classname
+    @options.flags = Openwsman::FLAG_ENUMERATION_ENUM_EPR # get EPRs
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
     @options.cim_namespace = namespace
@@ -229,13 +239,12 @@ public
       return []
     end
 
-    instances = []
-    result.Items.each do |item|
-      item.add(nil, "namespace", namespace)
-      item.add(nil, "classname", classname)
-      instances << item
+    names = []
+    # expect <n:Item><a:EndpointReference>...
+    result.Items.each do |epr|
+      names << Openwsman::EndPointReference.new(epr)
     end
-    return instances
+    return names
   end
   
 end
