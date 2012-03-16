@@ -83,7 +83,6 @@ public
     def service_class_name
       case @product
       when :winrm then "Win32_Service"
-      when :iamt then "CIM_HostedService"
       else
         "CIM_Service"
       end

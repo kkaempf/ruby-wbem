@@ -42,6 +42,26 @@ module Wbem
 class WsmanClient < WbemClient
 private
   #
+  # Handle client connection or protocol fault
+  #
+  # @return: true if fault
+  #
+  def _handle_fault client, result
+    if result.nil?
+      STDERR.puts "Client connection failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
+      return true
+    end
+    if result.fault?
+      fault = Openwsman::Fault.new result
+      STDERR.puts "Client protocol failed for (#{uri})"
+      STDERR.puts "\tFault code #{fault.code}, subcode #{fault.subcode}"
+      STDERR.puts "\t\treason #{fault.reason}"
+      STDERR.puts "\t\tdetail #{fault.detail}"
+      return true
+    end
+    false
+  end
+  #
   # WS-Identify
   # returns Openwsman::XmlDoc
   #
@@ -161,19 +181,26 @@ public
     @options.max_elements = 999
     resource = "#{@prefix}#{ns}/#{cn}"
     result = @client.enumerate( @options, nil, resource )
-    return unless result
-#    STDERR.puts "Result '#{result.to_xml}'"
-    return if result.fault?
-    items = result.body.EnumerateResponse.Items rescue nil
-    items.each do |inst|
-      yield inst
-    end if items
+    loop do
+      if _handle_fault @client, result
+        break
+      end
+      items = result.Items rescue nil
+      if items
+        items.each do |inst|
+          yield inst
+        end
+      end
+      context = result.context
+      break unless context
+      result = @client.pull( @options, nil, resource, context )
+    end
   end
 
   def class_names namespace, deep_inheritance = false
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
-    @options.cim_namespace = namespace
+    @options.cim_namespace = namespace if @product == :openwsman
     case @product
     when :openwsman
       unless @product_version >= "2.2"
@@ -196,8 +223,7 @@ public
       raise "Unsupported for WSMAN product #{@product}"
     end
     
-    if result.fault?
-      puts "Enumerate class names (#{uri}) failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
+    if _handle_fault @client, result
       return []
     end
     
@@ -221,7 +247,7 @@ public
         break unless context
         # get the next chunk
         result = @client.pull( @options, nil, uri, context)
-        break unless result
+        break if _handle_fault
       end
     end
     return classes
@@ -231,26 +257,26 @@ public
     @options.flags = Openwsman::FLAG_ENUMERATION_ENUM_EPR # get EPRs
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
-    @options.cim_namespace = namespace
+    @options.cim_namespace = namespace if @product == :openwsman
+    @options.set_dump_request
     uri = Openwsman::epr_prefix_for(classname, namespace) + "/#{classname}"
+    STDERR.puts "instance_names enumerate (#{uri})"
     result = @client.enumerate( @options, nil, uri )
-    if result.nil?
-      puts "Enumerate instances client failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
-      return []
-    end
-    if result.fault?
-      fault = Openwsman::Fault.new result
-      puts "Enumerate instances (#{uri}) failed"
-      puts "\tFault code #{fault.code}, subcode #{fault.subcode}"
-      puts "\t\treason #{fault.reason}"
-      puts "\t\tdetail #{fault.detail}"
-      return []
-    end
-
     names = []
-    # expect <n:Item><a:EndpointReference>...
-    result.Items.each do |epr|
-      names << Openwsman::EndPointReference.new(epr)
+    loop do
+      if _handle_fault @client, result
+        break
+      end
+      items = result.Items
+      if items
+        # expect <n:Item><a:EndpointReference>...
+        items.each do |epr|
+          names << Openwsman::EndPointReference.new(epr)
+        end
+      end
+      context = result.context
+      break unless context
+      result = @client.pull( @options, nil, uri, context )
     end
     return names
   end

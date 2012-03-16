@@ -1,3 +1,9 @@
+== 0.2.6
+
+* Honor iAMT when choosing classnames
+* Detect client connection vs client protocol errors
+* Use optimized enumerations
+
 == 0.2.5
 
 * Bugfix release
