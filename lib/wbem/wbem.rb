@@ -68,20 +68,57 @@ public
       raise "#{self.class}.class_names not implemented"
     end
   
+    def system_class_name
+      case @product
+      when :winrm then "Win32_ComputerSystem"
+      else
+        "CIM_ComputerSystem"
+      end
+    end
     def systems ns="root/cimv2"
-      instance_names ns, (@product == :winrm) ? "Win32_ComputerSystem" : "CIM_ComputerSystem"
+      ns = "" if @product == :iamt
+      instance_names ns, system_class_name
+    end
+    
+    def service_class_name
+      case @product
+      when :winrm then "Win32_Service"
+      when :iamt then "CIM_HostedService"
+      else
+        "CIM_Service"
+      end
     end
     def services ns="root/cimv2"
-      instance_names ns, (@product == :winrm) ? "Win32_Service" : "CIM_Service"
+      ns = "" if @product == :iamt
+      instance_names ns, service_class_name
     end
     def processes ns="root/cimv2"
+      ns = "" if @product == :iamt
       instance_names ns, (@product == :winrm) ? "Win32_Process" : "CIM_Process"
     end
+    def network_class_name
+      case @product
+      when :winrm then "Win32_NetworkAdapter"
+      when :iamt then "CIM_NetworkPort"
+      else
+        "CIM_NetworkAdapter"
+      end
+    end
     def networks ns="root/cimv2"
-      instance_names ns, (@product == :winrm) ? "Win32_NetworkAdapter" : "CIM_NetworkAdapter"
+      ns = "" if @product == :iamt
+      instance_names ns, network_class_name
+    end
+    def storage_class_name
+      case @product
+      when :winrm then "Win32_DiskDrive"
+      when :iamt then "CIM_StorageExtent"
+      else
+        "CIM_DiskDrive"
+      end
     end
     def storages ns="root/cimv2"
-      instance_names ns, (@product == :winrm) ? "Win32_DiskDrive" : "CIM_DiskDrive"
+      ns = "" if @product == :iamt
+      instance_names ns, storage_class_name
     end
 
   end # Class
