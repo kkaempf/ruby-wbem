@@ -234,8 +234,16 @@ public
     @options.cim_namespace = namespace
     uri = Openwsman::epr_prefix_for(classname, namespace) + "/#{classname}"
     result = @client.enumerate( @options, nil, uri )
+    if result.nil?
+      puts "Enumerate instances client failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
+      return []
+    end
     if result.fault?
-      puts "Enumerate instances (#{uri}) failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
+      fault = Openwsman::Fault.new result
+      puts "Enumerate instances (#{uri}) failed"
+      puts "\tFault code #{fault.code}, subcode #{fault.subcode}"
+      puts "\t\treason #{fault.reason}"
+      puts "\t\tdetail #{fault.detail}"
       return []
     end
 
