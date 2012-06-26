@@ -59,7 +59,7 @@ public
   # Create ObjectPath from namespace and classname
   #
   def objectpath namespace, classname = nil
-    Sfcc::Cim::ObjectPath.new(namespace, classname)
+    Sfcc::Cim::ObjectPath.new(namespace, classname, @client)
   end
 
   #
@@ -97,7 +97,7 @@ public
   #  of namespace, classname
   #
   def instance_names namespace, classname
-    objectpath = Sfcc::Cim::ObjectPath.new(namespace,classname)
+    objectpath = Sfcc::Cim::ObjectPath.new(namespace, classname)
     STDERR.puts "#{@client}.instance_names(#{objectpath})"
     ret = []
     begin
