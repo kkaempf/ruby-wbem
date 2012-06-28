@@ -41,13 +41,13 @@ module Wbem
         u = uri
         protocol_given = uri.port
       end
-      case protocol.to_sym
-      when :wsman
+      case protocol.to_s
+      when "wsman"
         unless protocol_given
           u.port = (u.scheme == "http") ? 5985 : 5986
         end
         return WsmanClient.new u, auth_scheme
-      when :cimxml
+      when "cimxml"
         unless protocol_given
           u.port = (u.scheme == "http") ? 5988 : 5989
         end

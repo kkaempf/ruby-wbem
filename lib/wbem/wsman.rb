@@ -29,9 +29,9 @@ module Openwsman
   end
   # Provide Cim::ObjectPath like accessors
   class EndPointReference
-    alias keys selector_names
-    alias key_count selector_count
-    alias add_key add_selector
+    alias :keys :selector_names
+    alias :key_count :selector_count
+    alias :add_key :add_selector
     def each_key
       keys.each { |key| yield key }
     end
@@ -92,7 +92,7 @@ public
     @client.transport.timeout = 5
     @client.transport.verify_peer = 0
     @client.transport.verify_host = 0
-    case @auth_scheme
+    case @auth_scheme.to_s
     when nil, ""
       @client.transport.auth_method = nil # negotiate
     when /none/i
