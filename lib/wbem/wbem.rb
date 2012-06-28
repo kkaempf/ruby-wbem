@@ -38,24 +38,19 @@ module Wbem
 private
     # assemble all namespaces
     def _namespaces ns, cn
-      result = nil
+      result = []
       # each_instance is the downcall to cimxml or wsman
       each_instance( ns, cn ) do |inst|
-        result ||= [ns]
-        name = "#{ns}/#{inst.Name}"
-        unless result.include? name
-          result << name
-          result.concat(_namespaces name, cn)
-        end
+        name = "#{inst.Name}"
+        result << name
       end
-      result || []
+      result
     end
 public
     # return list of namespaces
     def namespaces
-      STDERR.puts "Namespaces for #{@url}"
       result = []
-      ['root', 'Interop', 'interop'].each do |ns|
+      ['root', 'Interop', 'interop', 'root/interop' ].each do |ns|
         ["CIM_Namespace", "__Namespace", "__NAMESPACE"].each do |cn|
           result.concat(_namespaces ns, cn)
         end
