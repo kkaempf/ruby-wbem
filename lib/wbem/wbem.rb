@@ -35,6 +35,10 @@ module Wbem
       raise "#{self.class}.objectpath not implemented"
     end
 
+    def to_s
+      "#{@product}(#{@url})"
+    end
+
 private
     # assemble all namespaces
     def _namespaces ns, cn
