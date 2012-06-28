@@ -48,12 +48,12 @@ private
   #
   def _handle_fault client, result
     if result.nil?
-      STDERR.puts "Client connection failed:\n\tResult code #{@client.response_code}, Fault: #{@client.fault_string}"
+      STDERR.puts "Client connection failed:\n\tResult code #{client.response_code}, Fault: #{client.fault_string}"
       return true
     end
     if result.fault?
       fault = Openwsman::Fault.new result
-      STDERR.puts "Client protocol failed for (#{uri})"
+      STDERR.puts "Client protocol failed for (#{client})"
       STDERR.puts "\tFault code #{fault.code}, subcode #{fault.subcode}"
       STDERR.puts "\t\treason #{fault.reason}"
       STDERR.puts "\t\tdetail #{fault.detail}"
@@ -247,7 +247,7 @@ public
         break unless context
         # get the next chunk
         result = @client.pull( @options, nil, uri, context)
-        break if _handle_fault
+        break if _handle_fault @client, result
       end
     end
     return classes
