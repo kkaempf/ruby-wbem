@@ -79,7 +79,6 @@ public
   # Return list of classnames for given namespace
   #
   def class_names namespace, deep_inheritance = false
-    STDERR.puts "#{@client}.class_names(#{namespace})"
     ret = []
     op = Sfcc::Cim::ObjectPath.new(namespace)
     flags = deep_inheritance ? Sfcc::Flags::DeepInheritance : 0
@@ -98,7 +97,6 @@ public
   #
   def instance_names namespace, classname
     objectpath = Sfcc::Cim::ObjectPath.new(namespace, classname)
-    STDERR.puts "#{@client}.instance_names(#{objectpath})"
     ret = []
     begin
       @client.instance_names(objectpath).each do |path|
