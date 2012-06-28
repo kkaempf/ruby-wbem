@@ -14,7 +14,7 @@ module Sfcc
     class ObjectPath
       def keys
         res = []
-        each_key { |key| res << key }
+        each_key { |key,value| res << key }
         res
       end
     end
