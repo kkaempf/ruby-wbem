@@ -8,7 +8,7 @@ class TestClassnames < Test::Unit::TestCase
   #def teardown
   #end
   def test_classnames_cimxml
-    c = Wbem::Client.connect("http://wsman:secret@localhost:5988", :cimxml)
+    c = Wbem::Client.connect("https://wsman:secret@localhost:5989", :cimxml)
     assert c
     names = c.class_names "root/cimv2"
     assert names
@@ -32,7 +32,7 @@ class TestClassnames < Test::Unit::TestCase
     puts "test_classnames_openwsman_deep: #{names.size} classes"
   end
   def test_classnames_winrm
-    c = Wbem::Client.connect("http://wsman:secret@wsman2003sp2.suse.de:5985", :wsman)
+    c = Wbem::Client.connect("http://wsman:secret@wsman2003sp2.suse.de:5985", :wsman, :basic)
     assert c
     names = c.class_names "root/cimv2"
     assert names
@@ -40,7 +40,7 @@ class TestClassnames < Test::Unit::TestCase
     puts "test_classnames_winrm: #{names.size} classes"
   end
   def test_classnames_winrm_deep
-    c = Wbem::Client.connect("http://wsman:secret@wsman2003sp2.suse.de:5985", :wsman)
+    c = Wbem::Client.connect("http://wsman:secret@wsman2003sp2.suse.de:5985", :wsman, :basic)
     assert c
     names = c.class_names "root/cimv2", true
     assert names

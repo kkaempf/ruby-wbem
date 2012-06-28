@@ -17,7 +17,7 @@ class TestProduct < Test::Unit::TestCase
     puts "#{c.url} : #{c.product}"
   end
   def test_product_port_5985
-    # 5985 -> http, wman
+    # 5985 -> http, wsman
     c = Wbem::Client.connect("http://wsman:secret@localhost:5985")
     assert c
     assert c.is_a? Wbem::WsmanClient
@@ -38,7 +38,7 @@ class TestProduct < Test::Unit::TestCase
     assert c.product
     puts "#{c.url} : #{c.product}"
   end
-  def test_product_protocol_http_cimxml
+  def test_product_protocol_https_cimxml
     c = Wbem::Client.connect("https://wsman:secret@localhost:5989", :cimxml)
     assert c
     assert c.is_a? Wbem::CimxmlClient

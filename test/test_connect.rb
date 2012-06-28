@@ -9,21 +9,26 @@ class TestConnect < Test::Unit::TestCase
   #def teardown
   #end
   def test_connect_http_80
-    c = Wbem::Client.connect("http://wsman:secret@localhost")
-    assert c
+    assert_raise Sfcc::Cim::ErrorFailed do
+      Wbem::Client.connect("http://wsman:secret@localhost")
+    end
   end
   def test_connect_https_443
-    c = Wbem::Client.connect("https://wsman:secret@localhost")
-    assert c
+    assert_raise RuntimeError do
+      c = Wbem::Client.connect("https://wsman:secret@localhost")
+      assert c
+    end
   end
   def test_connect_port_5988
-    # 5988 -> http, cimxml
-    c = Wbem::Client.connect("http://wsman:secret@localhost:5988")
-    assert c
-    assert c.is_a? Wbem::CimxmlClient
+    assert_raise Sfcc::Cim::ErrorFailed do
+      # 5988 -> http, cimxml
+      c = Wbem::Client.connect("http://wsman:secret@localhost:5988")
+      assert c
+      assert c.is_a? Wbem::CimxmlClient
+    end
   end
   def test_connect_port_5985
-    # 5985 -> http, wman
+    # 5985 -> http, wsman
     c = Wbem::Client.connect("http://wsman:secret@localhost:5985")
     assert c
     assert c.is_a? Wbem::WsmanClient
@@ -35,13 +40,15 @@ class TestConnect < Test::Unit::TestCase
     assert c.is_a? Wbem::CimxmlClient
   end
   def test_connect_port_5986
-    # 5986 -> https, wman
-    c = Wbem::Client.connect("https://wsman:secret@localhost:5986")
-    assert c
-    assert c.is_a? Wbem::WsmanClient
+    assert_raise RuntimeError do
+      # 5986 -> https, wsman
+      c = Wbem::Client.connect("https://wsman:secret@localhost:5986")
+      assert c
+      assert c.is_a? Wbem::WsmanClient
+    end
   end
   def test_connect_protocol_cimxml
-    c = Wbem::Client.connect("http://wsman:secret@localhost", :cimxml)
+    c = Wbem::Client.connect("https://wsman:secret@localhost", :cimxml)
     assert c
     assert c.is_a? Wbem::CimxmlClient
   end
@@ -51,9 +58,11 @@ class TestConnect < Test::Unit::TestCase
     assert c.is_a? Wbem::WsmanClient
   end
   def test_connect_protocol_http_cimxml
-    c = Wbem::Client.connect("http://wsman:secret@localhost:5988", :cimxml)
-    assert c
-    assert c.is_a? Wbem::CimxmlClient
+    assert_raise Sfcc::Cim::ErrorFailed do
+      c = Wbem::Client.connect("http://wsman:secret@localhost:5988", :cimxml)
+      assert c
+      assert c.is_a? Wbem::CimxmlClient
+    end
   end
   def test_connect_protocol_https_cimxml
     c = Wbem::Client.connect("https://wsman:secret@localhost:5989", :cimxml)
@@ -66,13 +75,17 @@ class TestConnect < Test::Unit::TestCase
     assert c.is_a? Wbem::WsmanClient
   end
   def test_connect_protocol_https_wsman
-   c = Wbem::Client.connect("https://wsman:secret@localhost:5986", :wsman)
-    assert c
-    assert c.is_a? Wbem::WsmanClient
+    assert_raise RuntimeError do
+      c = Wbem::Client.connect("https://wsman:secret@localhost:5986", :wsman)
+      assert c
+      assert c.is_a? Wbem::WsmanClient
+    end
   end
   def test_connect_amt
-    c = Wbem::Client.connect("http://admin:P4ssw0rd!@10.10.103.60:16992/wsman", :wsman)
-    assert c
-    assert c.is_a? Wbem::WsmanClient
+    assert_raise RuntimeError do
+      c = Wbem::Client.connect("http://admin:P4ssw0rd!@10.10.103.60:16992/wsman", :wsman)
+      assert c
+      assert c.is_a? Wbem::WsmanClient
+    end
   end
 end

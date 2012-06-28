@@ -15,7 +15,7 @@ class TestNamespaces < Test::Unit::TestCase
     assert ns.size > 0
     puts ns.inspect
   end
-  def test_namespaces_winrm
+  def xtest_namespaces_winrm
     c = Wbem::Client.connect("http://wsman:secret@wsman2003sp2.suse.de:5985", :wsman, :basic)
     assert c
     ns = c.namespaces
