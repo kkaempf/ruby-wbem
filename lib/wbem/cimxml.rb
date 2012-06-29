@@ -44,6 +44,7 @@ private
       raise "Unknown CIMOM"
     end
   end
+
 public
 
   #
@@ -55,6 +56,15 @@ public
     _identify
   end
   
+  # return list of namespaces
+  def namespaces
+    result = []
+    each_instance( "root/interop", "CIM_Namespace" ) do |inst|
+      result << inst.Name
+    end
+    result.uniq
+  end
+
   #
   # Create ObjectPath from namespace and classname
   #

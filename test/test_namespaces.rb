@@ -13,14 +13,16 @@ class TestNamespaces < Test::Unit::TestCase
     ns = c.namespaces
     assert ns
     assert ns.size > 0
+    assert ns.include? "root/cimv2"
     puts ns.inspect
   end
-  def xtest_namespaces_winrm
+  def test_namespaces_winrm
     c = Wbem::Client.connect("http://wsman:secret@wsman2003sp2.suse.de:5985", :wsman, :basic)
     assert c
     ns = c.namespaces
     assert ns
     assert ns.size > 0
+    assert ns.include? "root/CIMV2"
     puts ns.inspect
   end
 end

@@ -48,15 +48,17 @@ private
   #
   def _handle_fault client, result
     if result.nil?
-      STDERR.puts "Client connection failed:\n\tResult code #{client.response_code}, Fault: #{client.fault_string}"
+      STDERR.puts "Client connection failed:\n\tResult code #{client.response_code}, Fault: #{client.fault_string}" if Wbem.debug
       return true
     end
     if result.fault?
       fault = Openwsman::Fault.new result
-      STDERR.puts "Client protocol failed for (#{client})"
-      STDERR.puts "\tFault code #{fault.code}, subcode #{fault.subcode}"
-      STDERR.puts "\t\treason #{fault.reason}"
-      STDERR.puts "\t\tdetail #{fault.detail}"
+      if Wbem.debug
+        STDERR.puts "Client protocol failed for (#{client})"
+        STDERR.puts "\tFault code #{fault.code}, subcode #{fault.subcode}"
+        STDERR.puts "\t\treason #{fault.reason}"
+        STDERR.puts "\t\tdetail #{fault.detail}"
+      end
       return true
     end
     false
@@ -73,7 +75,7 @@ private
     end
     if doc.fault?
       fault = doc.fault
-      STDERR.puts "Fault: #{fault.to_xml}"
+      STDERR.puts "Fault: #{fault.to_xml}" if Wbem.debug
       raise fault.to_s
     end
 #    STDERR.puts "Return #{doc.to_xml}"
@@ -172,10 +174,30 @@ public
 
   end
 
+public
+  #
+  # return list of namespaces
+  #
+  def namespaces ns = "root", cn = "__Namespace"
+    result = []
+    each_instance( ns, cn ) do |inst|
+      name = "#{ns}/#{inst.Name}"
+      result << name
+      result.concat namespaces name, cn
+    end
+    result.uniq
+  end
+
+  #
+  # Create ObjectPath
+  #
   def objectpath classname, namespace
     Openwsman::ObjectPath.new classname, namespace
   end
 
+  #
+  # Enumerate instances
+  #
   def each_instance( ns, cn )
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
@@ -197,6 +219,9 @@ public
     end
   end
 
+  #
+  # Enumerate class names
+  #
   def class_names namespace, deep_inheritance = false
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999

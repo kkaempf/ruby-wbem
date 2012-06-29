@@ -39,29 +39,7 @@ module Wbem
       "#{@product}(#{@url})"
     end
 
-private
-    # assemble all namespaces
-    def _namespaces ns, cn
-      result = []
-      # each_instance is the downcall to cimxml or wsman
-      each_instance( ns, cn ) do |inst|
-        name = "#{inst.Name}"
-        result << name
-      end
-      result
-    end
 public
-    # return list of namespaces
-    def namespaces
-      result = []
-      ['root', 'Interop', 'interop', 'root/interop' ].each do |ns|
-        ["CIM_Namespace", "__Namespace", "__NAMESPACE"].each do |cn|
-          result.concat(_namespaces ns, cn)
-        end
-      end
-      result.uniq
-    end
-
     # return list of classnames for namespace ns
     def class_names ns, deep_inheritance=false
       raise "#{self.class}.class_names not implemented"
