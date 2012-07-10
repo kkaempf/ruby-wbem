@@ -33,7 +33,6 @@ private
   def _identify
     # sfcb has /root/interop:CIM_ObjectManager
     sfcb_op = objectpath "root/interop", "CIM_ObjectManager"
-    STDERR.puts "Looking for #{sfcb_op}"
     begin
       @client.instances(sfcb_op).each do |inst|
         @product = inst.Description
@@ -55,8 +54,10 @@ public
     @client = Sfcc::Cim::Client.connect( { :uri => url, :verify => false } )
     _identify
   end
-  
+
+  #
   # return list of namespaces
+  #
   def namespaces
     result = []
     each_instance( "root/interop", "CIM_Namespace" ) do |inst|
@@ -66,10 +67,14 @@ public
   end
 
   #
-  # Create ObjectPath from namespace and classname
+  # Create ObjectPath from namespace, classname, and properties
   #
-  def objectpath namespace, classname = nil
-    Sfcc::Cim::ObjectPath.new(namespace, classname, @client)
+  def objectpath namespace, classname = nil, properties = {}
+    op = Sfcc::Cim::ObjectPath.new(namespace, classname, @client)
+    properties.each do |k,v|
+      op.add_key k,v
+    end
+    op
   end
 
   #
@@ -90,7 +95,7 @@ public
   #
   def class_names namespace, deep_inheritance = false
     ret = []
-    op = Sfcc::Cim::ObjectPath.new(namespace)
+    op =  objectpath namespace
     flags = deep_inheritance ? Sfcc::Flags::DeepInheritance : 0
     begin
       @client.class_names(op,flags).each do |name|
@@ -104,9 +109,18 @@ public
   #
   # Return list of Wbem::EndpointReference (object pathes) for instances
   #  of namespace, classname
+  # @param namespace : String or Sfcc::Cim::ObjectPath
+  # @param classname : String (optional)
+  # @param properties : Hash (optional)
   #
-  def instance_names namespace, classname
-    objectpath = Sfcc::Cim::ObjectPath.new(namespace, classname)
+  def instance_names namespace, classname=nil, properties={}
+    case namespace
+    when Sfcc::Cim::ObjectPath
+      objectpath = namespace
+      namespace = objectpath.namespace
+    else
+      objectpath = objectpath namespace.to_s, classname, properties
+    end
     ret = []
     begin
       @client.instance_names(objectpath).each do |path|
@@ -116,6 +130,25 @@ public
     rescue Sfcc::Cim::ErrorInvalidClass, Sfcc::Cim::ErrorInvalidNamespace
     end
     ret
+  end
+
+  #
+  # Return matching Wbem::Instance for first instance
+  #  matching namespace, classname, properties
+  # @param namespace : String or Sfcc::Cim::ObjectPath
+  # @param classname : String (optional)
+  # @param properties : Hash (optional)
+  #
+  def get_instance namespace, classname=nil, properties={}
+    case namespace
+    when Sfcc::Cim::ObjectPath
+      objectpath = namespace
+      namespace = objectpath.namespace
+    else
+      objectpath = objectpath namespace.to_s, classname, properties
+    end
+    ret = []
+    @client.get_instance(objectpath)
   end
 end # class
 end # module
