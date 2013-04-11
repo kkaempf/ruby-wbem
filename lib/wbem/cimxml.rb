@@ -80,8 +80,12 @@ public
   #
   # Return instances for namespace and classname
   #
-  def each_instance( ns, cn )
-    op = objectpath ns, cn
+  def each_instance( namespace_or_objectpath, classname = nil )
+    op = if namespace_or_objectpath.is_a? Sfcc::Cim::ObjectPath
+      namespace_or_objectpath
+    else
+      objectpath namespace_or_objectpath, classname
+    end
     begin
       @client.instances(op).each do |inst|
         yield inst

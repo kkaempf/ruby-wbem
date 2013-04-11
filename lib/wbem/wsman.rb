@@ -20,14 +20,37 @@ module Openwsman
       return nil
     end
   end
-  class ObjectPath
-    attr_reader :namespace, :classname
-    def initialize namespace, classname = nil
-      @namespace = namespace
-      @classname = classname
+  #
+  # Capture Fault as Exception
+  #
+  class Exception < ::RuntimeError
+    def initialize fault
+      unless fault.is_a? Openwsman::Fault
+        raise "#{fault} is not a fault" unless fault.fault?
+        fault = Openwsman::Fault.new fault
+      end
+      @fault = fault
+    end
+    def to_s
+      "Fault code #{@fault.code}, subcode #{@fault.subcode}" +
+      "\n\treason #{@fault.reason}" +
+      "\n\tdetail #{@fault.detail}"
     end
   end
-  # Provide Cim::ObjectPath like accessors
+  #
+  # Capture namespace, classname, and properties as ObjectPath
+  #
+  class ObjectPath
+    attr_reader :namespace, :classname, :properties
+    def initialize namespace, classname = nil, properties = {}
+      @namespace = namespace
+      @classname = classname
+      @properties = properties
+    end
+  end
+  #
+  # Provide Cim::ObjectPath like accessors for EndPointReference
+  #
   class EndPointReference
     alias :keys :selector_names
     alias :key_count :selector_count
@@ -36,11 +59,128 @@ module Openwsman
       keys.each { |key| yield key }
     end
   end
+  #
+  # Capture XmlDoc + WsmanClient as Instance
+  #
+  class Instance
+    def initialize node, client, epr_or_uri
+      @node = (node.is_a? Openwsman::XmlDoc) ? node.body : node
+      @epr = (epr_or_uri.is_a? Openwsman::EndPointReference) ? epr_or_uri : Openwsman::EndPointReference.new(epr_or_uri)
+      @client = client
+    end
+    #
+    #
+    #    
+    def to_s
+      "Instance #{@client}\n\t#{@epr}\n\t#{@node.to_xml}"
+    end
+    #
+    # Instance#<property>
+    # Instance#<method>(<args>)
+    #
+    def method_missing name, *args
+      if args.empty?
+        # try property first
+        res = @node.send name
+        return res.text if res
+      end
+      # try as method invocation
+      options = Openwsman::ClientOptions.new
+      options.set_dump_request
+      selectors = {}
+      @epr.each do |k,v|
+        selectors[k] = v
+      end
+      options.selectors = selectors # instance key properties
+      uri = @epr.resource_uri
+	
+      #
+      # get method input parameter information
+      #
+      classname = @epr.classname
+      s = "mof/#{classname}"
+      begin
+        require s
+      rescue LoadError
+        raise RuntimeError.new "Cannot load #{s} for type information"
+      end
+      methods = MOF.class_eval "#{classname}::METHODS"
+      method = methods[name.to_s]
+      raise RuntimeError.new("Unknown method #{name} for #{classname}") unless method
+      result_type = method[:type]
+      parameters = method[:parameters] || {}
+      input = parameters[:in]
+      output = parameters[:out]
+      argsin = {}
+      i = 0
+      if input
+        while i < input.size
+          value = args.shift
+          raise "Argument for #{input[i]} is nil, not allowed !" unless value
+          argsin[input[i]] = value
+          # FIXME more typecheck of args ?
+          i += 2
+        end
+      end
+      STDERR.puts "\n\tproperties #{argsin.inspect}\n"
+      options.properties = argsin
+      #
+      # output parameters ?
+      #
+      argsout = nil
+      if output
+        if args.empty?
+          raise "Function #{name} has output arguments, please add an empty hash to the call"
+        end
+        argsout = args.shift
+        unless argsout.kind_of? Hash
+          raise "Function #{name} has output arguments, last argument must be a Hash"
+        end
+        unless args.empty?
+          raise "Function call to #{name} has excess arguments"
+        end
+      end
+      STDERR.puts "\n\targsout #{argsout.inspect}\n"
+Openwsman.debug = -1
+      STDERR.puts "\n\tinvoke #{uri}.#{name}\n"
+      res = @client.client.invoke(options, uri, name.to_s)
+      raise Openwsman::Exception.new(res) if res.fault?
+      STDERR.puts "\n\tresult #{res.to_xml}\n"
+      result = res.find(uri, "#{name}_OUTPUT").find(uri, "ReturnValue").text
+      case result_type
+      when :boolean
+        result == "true" ? true : false
+      when :uint8, :uint16, :uint32, :uint64
+        result.to_i
+      when :string
+        result
+      when :float
+        result.to_f
+      when :datetime
+      else
+        raise "Unsupported result_type #{result_type.inspect}"
+      end
+    end
+  end
 end
+
 
 module Wbem
 class WsmanClient < WbemClient
 private
+  #
+  # create end point reference URI
+  #
+  def epr_uri_for(namespace,classname)
+    case @product
+    when :winrm
+      # winrm embeds namespace in resource URI
+      Openwsman::epr_uri_for(namespace,classname) rescue "http://schema.suse.com/wbem/wscim/1/cim-schema/2/#{namespace}/#{classname}"
+    else
+      (Openwsman::epr_prefix_for(classname)+"/#{classname}") rescue "http://schema.suse.com/wbem/wscim/1/cim-schema/2/#{classname}"
+    end
+  end
+
   #
   # Handle client connection or protocol fault
   #
@@ -76,12 +216,13 @@ private
     if doc.fault?
       fault = doc.fault
       STDERR.puts "Fault: #{fault.to_xml}" if Wbem.debug
-      raise fault.to_s
+      raise Openwsman::Exception.new fault
     end
 #    STDERR.puts "Return #{doc.to_xml}"
     doc
   end
 public
+  attr_reader :client
 
   def initialize uri, auth_scheme = nil
     super uri, auth_scheme
@@ -189,20 +330,25 @@ public
   end
 
   #
-  # Create ObjectPath
+  # Create ObjectPath from namespace, classname, and properties
   #
-  def objectpath classname, namespace
-    Openwsman::ObjectPath.new classname, namespace
+  def objectpath namespace, classname = nil, properties = {}
+    Openwsman::ObjectPath.new namespace, classname, properties
   end
 
   #
   # Enumerate instances
   #
-  def each_instance( ns, cn )
+  def each_instance( namespace_or_objectpath, classname = nil )
+    op = if namespace_or_objectpath.is_a? Openwsman::ObjectPath
+      namespace_or_objectpath
+    else
+      objectpath namespace_or_objectpath, classname
+    end
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
-    resource = "#{@prefix}#{ns}/#{cn}"
-    result = @client.enumerate( @options, nil, resource )
+    uri = epr_uri_for op.namespace, op.classname
+    result = @client.enumerate( @options, nil, uri )
     loop do
       if _handle_fault @client, result
         break
@@ -210,12 +356,12 @@ public
       items = result.Items rescue nil
       if items
         items.each do |inst|
-          yield inst
+          yield Openwsman::Instance.new(inst, self, uri)
         end
       end
       context = result.context
       break unless context
-      result = @client.pull( @options, nil, resource, context )
+      result = @client.pull( @options, nil, uri, context )
     end
   end
 
@@ -278,13 +424,37 @@ public
     return classes
   end
 
-  def instance_names namespace, classname
+  #
+  # Return list of Wbem::EndpointReference (object pathes) for instances
+  #  of namespace, classname
+  # @param namespace : String or Sfcc::Cim::ObjectPath
+  # @param classname : String (optional)
+  # @param properties : Hash (optional)
+  #
+  def instance_names namespace, classname=nil, properties = {}
+    case namespace
+    when Openwsman::ObjectPath
+      classname = namespace.classname
+      properties = namespace.properties
+      namespace = namespace.namespace
+      uri = epr_uri_for(namespace,classname)
+    when Openwsman::EndPointReference
+      namespace.each do |k,v|
+        properties[k] = v
+      end
+      classname = namespace.classname
+      uri = namespace.resource_uri
+      namespace = namespace.namespace
+    else
+      uri = epr_uri_for(namespace, classname)
+    end
     @options.flags = Openwsman::FLAG_ENUMERATION_ENUM_EPR # get EPRs
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
     @options.cim_namespace = namespace if @product == :openwsman
     @options.set_dump_request
-    uri = Openwsman::epr_prefix_for(classname, namespace) + "/#{classname}"
+    @options.selectors = properties unless properties.empty?
+    start = Time.now
     STDERR.puts "instance_names enumerate (#{uri})"
     result = @client.enumerate( @options, nil, uri )
     names = []
@@ -303,8 +473,42 @@ public
       break unless context
       result = @client.pull( @options, nil, uri, context )
     end
+    STDERR.puts "Enumerated #{names.size} items in #{Time.now-start} seconds"
     return names
   end
-  
+
+  #
+  # Return matching Wbem::Instance for first instance
+  #  matching namespace, classname, properties
+  # @param namespace : String or Sfcc::Cim::ObjectPath
+  # @param classname : String (optional)
+  # @param properties : Hash (optional)
+  #
+  def get_instance namespace, classname=nil, properties={}
+    case namespace
+    when Openwsman::ObjectPath
+      classname = namespace.classname
+      properties = namespace.properties
+      namespace = namespace.namespace
+      uri = epr_uri_for(namespace, classname)
+    when Openwsman::EndPointReference
+      namespace.each do |k,v|
+        properties[k] = v
+      end
+      classname = namespace.classname
+      uri = namespace.resource_uri
+      namespace = namespace.namespace
+    else
+      uri = epr_uri_for(namespace, classname)
+    end
+    @options.set_dump_request
+    @options.cim_namespace = namespace if @product == :openwsman
+    @options.selectors = properties unless properties.empty?
+    STDERR.puts "@client.get(namepace '#{@options.cim_namespace}', props #{properties.inspect}, uri #{uri}"
+    res = @client.get(@options, uri)
+    raise Openwsman::Exception.new res if res.fault?
+    Openwsman::Instance.new res, self, Openwsman::EndPointReference.new(uri, "", properties)
+  end
+
 end
 end # module
