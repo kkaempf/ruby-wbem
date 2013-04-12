@@ -40,8 +40,8 @@ module Wbem
     end
 
 public
-    # return list of classnames for namespace ns
-    def class_names ns, deep_inheritance=false
+    # return list of classnames for ObjectPath op
+    def class_names op, deep_inheritance=false
       raise "#{self.class}.class_names not implemented"
     end
   

@@ -13,6 +13,24 @@ class TestClassnames < Test::Unit::TestCase
     names = c.class_names "root/cimv2"
     assert names
     assert names.size > 0
+    assert !names.include?("CIM_ManagedSystemElement")
+    puts "test_classnames_cimxml: #{names.size} classes"
+  end
+  def test_classnames_cimxml_partial
+    c = Wbem::Client.connect("https://wsman:secret@localhost:5989", :cimxml)
+    assert c
+    names = c.class_names "root/cimv2", "CIM_ManagedElement"
+    assert names
+    assert names.size > 0
+    assert names.include?("CIM_ManagedSystemElement")
+    puts "test_classnames_cimxml: #{names.size} classes"
+  end
+  def test_classnames_cimxml_deep
+    c = Wbem::Client.connect("https://wsman:secret@localhost:5989", :cimxml)
+    assert c
+    names = c.class_names "root/cimv2", true
+    assert names
+    assert names.size > 0
     puts "test_classnames_cimxml: #{names.size} classes"
   end
   def test_classnames_openwsman

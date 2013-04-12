@@ -95,14 +95,16 @@ public
   end
   
   #
-  # Return list of classnames for given namespace
+  # Return list of classnames for given object_path
   #
-  def class_names namespace, deep_inheritance = false
+  def class_names op, deep_inheritance = false
     ret = []
-    op =  objectpath namespace
+    unless op.is_a? Sfcc::Cim::ObjectPath
+      op = Sfcc::Cim::ObjectPath.new(op.to_s, nil) # assume namespace
+    end
     flags = deep_inheritance ? Sfcc::Flags::DeepInheritance : 0
     begin
-      @client.class_names(op,flags).each do |name|
+      @client.class_names(op, flags).each do |name|
 	ret << name.to_s
       end
     rescue Sfcc::Cim::ErrorInvalidNamespace

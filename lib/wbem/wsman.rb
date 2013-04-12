@@ -368,25 +368,27 @@ public
   #
   # Enumerate class names
   #
-  def class_names namespace, deep_inheritance = false
+  def class_names op, deep_inheritance = false
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
-    @options.cim_namespace = namespace if @product == :openwsman
+    namespace = (op.is_a? Sfcc::ObjectPath) ? op.namespace : op
+    classname = (op.is_a? Sfcc::ObjectPath) ? op.classname : nil
     case @product
     when :openwsman
-      unless @product_version >= "2.2"
+      if @product_version < "2.2"
         STDERR.puts "ENUMERATE_CLASS_NAMES unsupported for #{@product_vendor} #{@product_version}, please upgrade"
         return []
       end
       method = Openwsman::CIM_ACTION_ENUMERATE_CLASS_NAMES
       uri = Openwsman::XML_NS_CIM_INTRINSIC
+      @options.cim_namespace = namespace
       @options.add_selector("DeepInheritance", "True") if deep_inheritance
       result = @client.invoke( @options, uri, method )
     when :winrm
       # see https://github.com/kkaempf/openwsman/blob/master/bindings/ruby/tests/winenum.rb
       filter = Openwsman::Filter.new
       query = "select * from meta_class"
-      query << " where __SuperClass is null" unless deep_inheritance
+      query << " where __SuperClass is #{classname?classname:'null'}" unless deep_inheritance
       filter.wql query
       uri = "#{@prefix}#{namespace}/*"
       result = @client.enumerate( @options, filter, uri )
