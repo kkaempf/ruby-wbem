@@ -31,17 +31,22 @@ private
   # on error return nil and set @response to http response code
   #
   def _identify
-    # sfcb has /root/interop:CIM_ObjectManager
-    sfcb_op = objectpath "root/interop", "CIM_ObjectManager"
     begin
-      @client.instances(sfcb_op).each do |inst|
-        @product = inst.Description
-        break
+      product = nil
+      { "sfcb" => [ "root/interop", "CIM_ObjectManager" ],
+        "pegasus" => [ "root/PG_Internal", "PG_ConfigSetting" ]
+      }.each do |cimom, op|
+        obj = objectpath *op
+        @client.instances(obj).each do |inst|
+          product = inst.Description || cimom
+          break
+        end
+        break if product
       end
     rescue Sfcc::Cim::ErrorInvalidClass, Sfcc::Cim::ErrorInvalidNamespace
-      # not sfcb
       raise "Unknown CIMOM"
     end
+    product
   end
 
 public
@@ -52,7 +57,7 @@ public
   def initialize url, auth_scheme = nil
     super url, auth_scheme
     @client = Sfcc::Cim::Client.connect( { :uri => url, :verify => false } )
-    _identify
+    @product = _identify
   end
 
   #
