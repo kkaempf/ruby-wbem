@@ -156,5 +156,13 @@ public
     ret = []
     @client.get_instance(objectpath)
   end
+  
+  #
+  # get class
+  #
+  def get_class namespace, classname=nil
+    objectpath = classname ? Sfcc::Cim::ObjectPath.new(namespace, classname) : namespace
+    @client.get_class objectpath
+  end
 end # class
 end # module
