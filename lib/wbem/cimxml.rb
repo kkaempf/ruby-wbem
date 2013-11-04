@@ -166,7 +166,15 @@ public
   # get class
   #
   def get_class namespace, classname=nil
-    objectpath = classname ? Sfcc::Cim::ObjectPath.new(namespace, classname) : namespace
+    objectpath = case namespace
+                 when Sfcc::Cim::ObjectPath
+                   namespace
+                 when Sfcc::Cim::Instance
+                   Sfcc::Cim::ObjectPath.new(namespace.namespace, namespace.classname)
+                 else
+                   raise "Classname missing" unless classname
+                   Sfcc::Cim::ObjectPath.new(namespace.to_s, classname.to_s)
+                 end
     @client.get_class objectpath
   end
 end # class
