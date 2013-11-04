@@ -177,5 +177,18 @@ public
                  end
     @client.get_class objectpath
   end
+
+  #
+  # Return associations for instance
+  #
+  def each_association( objectpath )
+    begin
+      @client.associators(objectpath).each do |assoc|
+        yield assoc
+      end
+    rescue Sfcc::Cim::ErrorInvalidClass, Sfcc::Cim::ErrorInvalidNamespace
+    end
+  end
+  
 end # class
 end # module
