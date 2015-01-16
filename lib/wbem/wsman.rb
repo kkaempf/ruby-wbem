@@ -371,8 +371,8 @@ public
   def class_names op, deep_inheritance = false
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
-    namespace = (op.is_a? Sfcc::ObjectPath) ? op.namespace : op
-    classname = (op.is_a? Sfcc::ObjectPath) ? op.classname : nil
+    namespace = (op.is_a? Sfcc::Cim::ObjectPath) ? op.namespace : op
+    classname = (op.is_a? Sfcc::Cim::ObjectPath) ? op.classname : nil
     case @product
     when :openwsman
       if @product_version < "2.2"
