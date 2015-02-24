@@ -221,6 +221,17 @@ private
 #    STDERR.puts "Return #{doc.to_xml}"
     doc
   end
+  #
+  # Get instance by EndPointReference
+  #
+  def get_by_epr epr
+    options = Openwsman::ClientOptions.new
+    epr.each do |k,v|
+      options.add_selector( k, v )
+    end        
+    client.get( options, epr.resource_uri )
+  end
+
 public
   attr_reader :client
 
@@ -254,7 +265,7 @@ public
       raise "Unknown auth_scheme #{@auth_scheme.inspect}"
     end
     @options = Openwsman::ClientOptions.new
-    
+
 #    STDERR.puts "auth #{@auth_scheme.inspect} -> #{@client.transport.auth_method}"
 
     doc = _identify

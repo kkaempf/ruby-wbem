@@ -44,7 +44,23 @@ public
     def class_names op, deep_inheritance=false
       raise "#{self.class}.class_names not implemented"
     end
-  
+
+    #
+    # get instance
+    # call-seq
+    #   get Openwsman::EndPointReference
+    #
+    def get args
+      case args
+      when Openwsman::EndPointReference
+        get_by_epr args
+      else
+        raise "Unsupported Wbem::get #{args.class}"
+      end
+    end
+    #
+    # ComputerSystem
+    #
     def system_class_name
       case @product
       when :winrm then "Win32_ComputerSystem"
@@ -57,6 +73,9 @@ public
       instance_names ns, system_class_name
     end
 
+    #
+    # RegisteredProfile
+    #
     def profile_class_name
       "CIM_RegisteredProfile"
     end
@@ -65,6 +84,9 @@ public
       instance_names ns, profile_class_name
     end
 
+    #
+    # Service
+    #
     def service_class_name
       case @product
       when :winrm then "Win32_Service"
@@ -80,6 +102,10 @@ public
       ns = "" if @product == :iamt
       instance_names ns, (@product == :winrm) ? "Win32_Process" : "CIM_Process"
     end
+
+    #
+    # NetworkAdapter, NetworkPort
+    #
     def network_class_name
       case @product
       when :winrm then "Win32_NetworkAdapter"
@@ -92,6 +118,10 @@ public
       ns = "" if @product == :iamt
       instance_names ns, network_class_name
     end
+
+    #
+    # DiskDrive, StorageExtent
+    #
     def storage_class_name
       case @product
       when :winrm then "Win32_DiskDrive"
