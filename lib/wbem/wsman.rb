@@ -122,7 +122,7 @@ module Openwsman
           i += 2
         end
       end
-      STDERR.puts "\n\tproperties #{argsin.inspect}\n"
+      STDERR.puts "\n\tproperties #{argsin.inspect}\n" if Wbem.debug
       options.properties = argsin
       #
       # output parameters ?
@@ -140,12 +140,12 @@ module Openwsman
           raise "Function call to #{name} has excess arguments"
         end
       end
-      STDERR.puts "\n\targsout #{argsout.inspect}\n"
-Openwsman.debug = -1
-      STDERR.puts "\n\tinvoke #{uri}.#{name}\n"
+      STDERR.puts "\n\targsout #{argsout.inspect}\n" if Wbem.debug
+#Openwsman.debug = -1
+      STDERR.puts "\n\tinvoke #{uri}.#{name}\n" if Wbem.debug
       res = @client.client.invoke(options, uri, name.to_s)
       raise Openwsman::Exception.new(res) if res.fault?
-      STDERR.puts "\n\tresult #{res.to_xml}\n"
+      STDERR.puts "\n\tresult #{res.to_xml}\n" if Wbem.debug
       result = res.find(uri, "#{name}_OUTPUT").find(uri, "ReturnValue").text
       case result_type
       when :boolean
@@ -457,7 +457,7 @@ public
     @options.set_dump_request
     @options.selectors = properties unless properties.empty?
     start = Time.now
-    STDERR.puts "instance_names enumerate (#{uri})"
+    STDERR.puts "instance_names enumerate (#{uri})" if Wbem.debug
     result = @client.enumerate( @options, nil, uri )
     names = []
     loop do
@@ -475,7 +475,7 @@ public
       break unless context
       result = @client.pull( @options, nil, uri, context )
     end
-    STDERR.puts "Enumerated #{names.size} items in #{Time.now-start} seconds"
+    STDERR.puts "Enumerated #{names.size} items in #{Time.now-start} seconds" if Wbem.debug
     return names
   end
 
@@ -506,7 +506,7 @@ public
     @options.set_dump_request
     @options.cim_namespace = namespace if @product == :openwsman
     @options.selectors = properties unless properties.empty?
-    STDERR.puts "@client.get(namepace '#{@options.cim_namespace}', props #{properties.inspect}, uri #{uri}"
+    STDERR.puts "@client.get(namepace '#{@options.cim_namespace}', props #{properties.inspect}, uri #{uri}" if Wbem.debug
     res = @client.get(@options, uri)
     raise Openwsman::Exception.new res if res.fault?
     Openwsman::Instance.new res, self, Openwsman::EndPointReference.new(uri, "", properties)
