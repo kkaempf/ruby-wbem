@@ -56,7 +56,7 @@ public
       ns = "" if @product == :iamt
       instance_names ns, system_class_name
     end
-    
+
     def profile_class_name
       "CIM_RegisteredProfile"
     end
@@ -64,7 +64,7 @@ public
       ns = "" if @product == :iamt
       instance_names ns, profile_class_name
     end
-    
+
     def service_class_name
       case @product
       when :winrm then "Win32_Service"
