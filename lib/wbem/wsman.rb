@@ -86,7 +86,7 @@ module Openwsman
       end
       # try as method invocation
       options = Openwsman::ClientOptions.new
-      options.set_dump_request
+      options.set_dump_request if Wbem.debug
       selectors = {}
       @epr.each do |k,v|
         selectors[k] = v
@@ -454,7 +454,7 @@ public
     @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
     @options.cim_namespace = namespace if @product == :openwsman
-    @options.set_dump_request
+    @options.set_dump_request if Wbem.debug
     @options.selectors = properties unless properties.empty?
     start = Time.now
     STDERR.puts "instance_names enumerate (#{uri})" if Wbem.debug
@@ -503,7 +503,7 @@ public
     else
       uri = epr_uri_for(namespace, classname)
     end
-    @options.set_dump_request
+    @options.set_dump_request if Wbem.debug
     @options.cim_namespace = namespace if @product == :openwsman
     @options.selectors = properties unless properties.empty?
     STDERR.puts "@client.get(namepace '#{@options.cim_namespace}', props #{properties.inspect}, uri #{uri}" if Wbem.debug
