@@ -8,7 +8,7 @@ class TestProfiles < Test::Unit::TestCase
     assert profiles.size > 0
     puts "test_profiles_cimxml: #{profiles.size} profiles"
     profiles.each do |profile|
-      puts "ns #{profile.namespace}, class #{profile.classname}, Name #{profile.name}"
+      puts "ns #{profile.namespace}, class #{profile.classname}, InstanceID #{profile.InstanceID}"
     end
   end
   #def setup
