@@ -1,3 +1,7 @@
+== 0.3.0
+
+* Add Client#profiles to enumerate CIM_RegisteredProfile
+
 == 0.2.8
 
 * Client#class_names accepts an ObjectPath now
