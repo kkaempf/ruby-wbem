@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency("yard", [">= 0.5"])
   s.add_dependency("sfcc", [">= 0.4.1"])
   s.add_dependency("openwsman", [">= 2.3.2"])
+  s.add_dependency("cim", [">= 1.4.2"])
 
   s.files        = Dir.glob("lib/**/*.rb") + %w(CHANGELOG.rdoc README.rdoc)
   s.require_path = 'lib'

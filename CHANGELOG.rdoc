@@ -1,3 +1,7 @@
+== 0.3.1
+
+* Add Client#get to get an instance by EndPointReference
+
 == 0.3.0
 
 * Add Client#profiles to enumerate CIM_RegisteredProfile

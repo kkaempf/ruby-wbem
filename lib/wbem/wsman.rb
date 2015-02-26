@@ -9,6 +9,7 @@
 #
 require "wbem/wbem"
 require "openwsman"
+require "cim"
 
 class AuthError < StandardError
 end
@@ -59,14 +60,30 @@ module Openwsman
       keys.each { |key| yield key }
     end
   end
+end
+
+
+module Wbem
+
   #
   # Capture XmlDoc + WsmanClient as Instance
   #
-  class Instance
+  class Instance < CIM::Instance
     def initialize node, client, epr_or_uri
-      @node = (node.is_a? Openwsman::XmlDoc) ? node.body : node
+      STDERR.puts "Wsman::Instance.new @node #{node.class}"
+      @node = node.body.child rescue node
+      STDERR.puts "Wsman::Instance.new @node #{@node.class}"
       @epr = (epr_or_uri.is_a? Openwsman::EndPointReference) ? epr_or_uri : Openwsman::EndPointReference.new(epr_or_uri)
       @client = client
+    end
+    def classname
+      @epr.classname
+    end
+    def attributes
+      @node.each do |node|
+        STDERR.puts "Wsman::Instance #{node}"
+        yield [ node.name, node.text ]
+      end
     end
     #
     #
@@ -79,6 +96,9 @@ module Openwsman
     # Instance#<method>(<args>)
     #
     def method_missing name, *args
+      # http://stackoverflow.com/questions/8960685/ruby-why-does-puts-call-to-ary
+      raise NoMethodError if name == :to_ary
+      STDERR.puts "Wsman::Instance#method_missing #{name}(#{args.inspect})"
       if args.empty?
         # try property first
         res = @node.send name
@@ -162,10 +182,7 @@ module Openwsman
       end
     end
   end
-end
-
-
-module Wbem
+  
 class WsmanClient < WbemClient
 private
   #
@@ -222,14 +239,18 @@ private
     doc
   end
   #
-  # Get instance by EndPointReference
+  # Get Wbem::Instance by EndPointReference
   #
   def get_by_epr epr
     options = Openwsman::ClientOptions.new
     epr.each do |k,v|
       options.add_selector( k, v )
     end        
-    client.get( options, epr.resource_uri )
+    doc = client.get( options, epr.resource_uri )
+    if doc.fault?
+      raise Openwsman::Fault.new doc
+    end
+    Wbem::Instance.new doc, self, epr
   end
 
 public
@@ -367,7 +388,7 @@ public
       items = result.Items rescue nil
       if items
         items.each do |inst|
-          yield Openwsman::Instance.new(inst, self, uri)
+          yield Wbem::Instance.new(inst, self, uri)
         end
       end
       context = result.context
@@ -520,7 +541,7 @@ public
     STDERR.puts "@client.get(namepace '#{@options.cim_namespace}', props #{properties.inspect}, uri #{uri}" if Wbem.debug
     res = @client.get(@options, uri)
     raise Openwsman::Exception.new res if res.fault?
-    Openwsman::Instance.new res, self, Openwsman::EndPointReference.new(uri, "", properties)
+    Wbem::Instance.new res, self, Openwsman::EndPointReference.new(uri, "", properties)
   end
 
 end

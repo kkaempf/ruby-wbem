@@ -54,6 +54,12 @@ public
       case args
       when Openwsman::EndPointReference
         get_by_epr args
+      when String
+        if self.class == WsmanClient
+          get_by_epr Openwsman::EndPointReference.new(args)          
+        else
+          raise "Unsupported Wbem::get #{args.class} for CimXml"
+        end
       else
         raise "Unsupported Wbem::get #{args.class}"
       end

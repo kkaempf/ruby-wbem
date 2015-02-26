@@ -26,7 +26,7 @@ class TestProfiles < Test::Unit::TestCase
     show c.profiles
   end
   def test_profiles_iamt
-    c = Wbem::Client.connect("http://admin:P4ssw0rd!@10.160.67.29:16992", :wsman, :digest)
+    c = Wbem::Client.connect("http://admin:P4ssw0rd!@10.160.64.28:16992", :wsman, :digest)
     assert c
     show c.profiles
   end
