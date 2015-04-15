@@ -46,22 +46,29 @@ public
     end
 
     #
-    # get instance
-    # call-seq
-    #   get Openwsman::EndPointReference
+    # get instance by reference
     #
-    def get args
-      case args
+    # call-seq
+    #   get Openwsman::EndPointReference -> Wbem::Instance
+    #   get Sfcc::Cim::ObjectPath -> Wbem::Instance
+    #   get String -> Wbem::Instance
+    #
+    def get instance_reference
+      case instance_reference
       when Openwsman::EndPointReference
-        get_by_epr args
+        get_by_epr instance_reference
+      when Sfcc::Cim::ObjectPath
+        get_by_objectpath instance_reference
       when String
         if self.class == WsmanClient
-          get_by_epr Openwsman::EndPointReference.new(args)          
+          get_by_epr Openwsman::EndPointReference.new(instance_reference)
+        elsif self.class == CimxmlClient
+          get_by_objectpath CimxmlClient.parse_object_path(instance_reference)
         else
-          raise "Unsupported Wbem::get #{args.class} for CimXml"
+          raise "Unsupported Wbem::get #{instance_reference.class} for CimXml"
         end
       else
-        raise "Unsupported Wbem::get #{args.class}"
+        raise "Unsupported Wbem::get #{instance_reference.class}"
       end
     end
     #

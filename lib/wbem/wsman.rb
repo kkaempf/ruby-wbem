@@ -79,6 +79,9 @@ module Wbem
     def classname
       @epr.classname
     end
+    #
+    # attribute iterator
+    #
     def attributes
       @node.each do |node|
         STDERR.puts "Wsman::Instance #{node}"
@@ -86,7 +89,13 @@ module Wbem
       end
     end
     #
+    # access attribute by name
     #
+    def [] name
+      @node.find(nil, name).text rescue nil
+    end
+    #
+    # to_s - stringify
     #    
     def to_s
       "Instance #{@client}\n\t#{@epr}\n\t#{@node.to_xml}"

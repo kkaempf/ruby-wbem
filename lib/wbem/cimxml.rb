@@ -52,6 +52,43 @@ private
 public
 
   #
+  # parse ObjectPath to Sfcc::Cim::ObjectPath
+  # 1. root/cimv2:Linux_ComputerSystem.CreationClassName="Linux_ComputerSystem",Name="foo.bar"
+  # 2. localhost:5989/root/cimv2:Linux_ComputerSystem.CreationClassName="Linux_ComputerSystem",Name="heron.suse.de"
+  #
+  #
+  def self.parse_object_path s
+    op = nil
+    front, values = s.split(".",2)
+    STDERR.puts "self.parse_object_path >#{front}<(#{values})"
+    frontargs = front.split(":")
+    if frontargs.size == 2
+      # case 1 above
+      namespace, classname = frontargs
+      op = Sfcc::Cim::ObjectPath.new(namespace, classname)
+    elsif frontargs.size == 3
+      host, port_and_namespace, classname = frontargs
+      port, namespace = port_and_namespace.split("/", 2)
+      op = Sfcc::Cim::ObjectPath.new(namespace, classname)      
+    else
+      raise "CimxmlClient.parse_object_path: Can't parse >#{frontargs.inspect}<"
+    end
+    # add values
+    while values && !values.empty?
+      puts "Values >#{values.inspect}<"
+      name, rest = values.split("=", 2)
+      arg, values = if rest[0,1] == '"' # quoted arg
+                      rest[1..-1].split(/\",?/, 2)
+                    else # non-quoted arg
+                      rest.split(",", 2)
+                    end
+      puts "name(#{name}), arg(#{arg})"
+      op.add_key(name, arg)
+    end
+    puts "Op #{op}"
+    op
+  end
+  #
   # Initialize a CIMXML client connection
   #
   def initialize url, auth_scheme = nil
@@ -190,5 +227,11 @@ public
     end
   end
   
+  #
+  # get instance by objectpath
+  #
+  def get_by_objectpath objpath
+    @client.get_instance(objpath)
+  end
 end # class
 end # module

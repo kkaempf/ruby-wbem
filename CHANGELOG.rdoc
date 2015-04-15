@@ -1,3 +1,7 @@
+== 0.3.2
+
+* Add Client#get to get an instance by ObjectPath
+
 == 0.3.1
 
 * Add Client#get to get an instance by EndPointReference
