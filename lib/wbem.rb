@@ -9,6 +9,8 @@
 # Licensed under the MIT license
 #
 module Wbem
+  require 'wbem/class_factory'
+
   @@debug = nil
   def Wbem.debug
     @@debug
