@@ -10,6 +10,7 @@
 #
 module Wbem
   require 'wbem/class_factory'
+  require 'wbem/conversion'
 
   @@debug = nil
   def Wbem.debug

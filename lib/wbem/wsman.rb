@@ -68,12 +68,12 @@ module Wbem
   #
   # Capture XmlDoc + WsmanClient as Instance
   #
-  class Instance < CIM::Instance
-    def initialize node, client, epr_or_uri
-      STDERR.puts "Wsman::Instance.new @node #{node.class}"
+  class Instance
+    def initialize client, epr_or_uri, node
+#      STDERR.puts "Wsman::Instance.new @node #{node.class}"
       @node = node.body.child rescue node
-      STDERR.puts "Wsman::Instance.new @node #{@node.class}"
-      @epr = (epr_or_uri.is_a? Openwsman::EndPointReference) ? epr_or_uri : Openwsman::EndPointReference.new(epr_or_uri)
+#      STDERR.puts "Wsman::Instance.new @node #{@node.class}"
+      @epr = (epr_or_uri.is_a? Openwsman::EndPointReference) ? epr_or_uri : Openwsman::EndPointReference.new(epr_or_uri) if epr
       @client = client
     end
     def classname
@@ -92,7 +92,7 @@ module Wbem
     # access attribute by name
     #
     def [] name
-      @node.find(nil, name).text rescue nil
+      @node.find(nil, name.to_s).text rescue nil
     end
     #
     # to_s - stringify
@@ -100,42 +100,9 @@ module Wbem
     def to_s
       "Instance #{@client}\n\t#{@epr}\n\t#{@node.to_xml}"
     end
-    #
-    # Instance#<property>
-    # Instance#<method>(<args>)
-    #
-    def method_missing name, *args
-      # http://stackoverflow.com/questions/8960685/ruby-why-does-puts-call-to-ary
-      raise NoMethodError if name == :to_ary
-      STDERR.puts "Wsman::Instance#method_missing #{name}(#{args.inspect})"
-      if args.empty?
-        # try property first
-        res = @node.send name
-        return res.text if res
-      end
-      # try as method invocation
-      options = Openwsman::ClientOptions.new
-      options.set_dump_request if Wbem.debug
-      selectors = {}
-      @epr.each do |k,v|
-        selectors[k] = v
-      end
-      options.selectors = selectors # instance key properties
-      uri = @epr.resource_uri
-	
-      #
-      # get method input parameter information
-      #
-      classname = @epr.classname
-      s = "mof/#{classname}"
-      begin
-        require s
-      rescue LoadError
-        raise RuntimeError.new "Cannot load #{s} for type information"
-      end
-      methods = MOF.class_eval "#{classname}::METHODS"
-      method = methods[name.to_s]
-      raise RuntimeError.new("Unknown method #{name} for #{classname}") unless method
+    
+    def invoke name, method, args
+      STDERR.puts "Wsman::Instance#invoke #{name}(#{args.inspect})"
       result_type = method[:type]
       parameters = method[:parameters] || {}
       input = parameters[:in]
@@ -189,6 +156,44 @@ module Wbem
       else
         raise "Unsupported result_type #{result_type.inspect}"
       end
+    end
+    #
+    # Instance#<property>
+    # Instance#<method>(<args>)
+    #
+    def method_missing name, *args
+      # http://stackoverflow.com/questions/8960685/ruby-why-does-puts-call-to-ary
+      raise NoMethodError if name == :to_ary
+      STDERR.puts "Wsman::Instance#method_missing #{name}(#{args.inspect})"
+      if args.empty?
+        # try property first
+        res = @node.send name
+        return res.text if res
+      end
+      # try as method invocation
+      options = Openwsman::ClientOptions.new
+      options.set_dump_request if Wbem.debug
+      selectors = {}
+      @epr.each do |k,v|
+        selectors[k] = v
+      end
+      options.selectors = selectors # instance key properties
+      uri = @epr.resource_uri
+	
+      #
+      # get method input parameter information
+      #
+      classname = @epr.classname
+      s = "mof/#{classname}"
+      begin
+        require s
+      rescue LoadError
+        raise RuntimeError.new "Cannot load #{s} for type information"
+      end
+      methods = MOF.class_eval "#{classname}::METHODS"
+      method = methods[name.to_s]
+      raise RuntimeError.new("Unknown method #{name} for #{classname}") unless method
+      invoke name, method, args
     end
   end
   
@@ -259,7 +264,8 @@ private
     if doc.fault?
       raise Openwsman::Fault.new doc
     end
-    Wbem::Instance.new doc, self, epr
+    klass = @factory.class_for epr.classname
+    klass.new doc, self, epr
   end
 
 public

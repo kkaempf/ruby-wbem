@@ -15,8 +15,12 @@ module Wbem
     require 'cim'
     require 'mof'
     require 'pathname'
-    def initialize classbase
-      @classbase = File.expand_path(classbase)
+    
+    #
+    # Constructor
+    #
+    def initialize basepath
+      @basedir = File.expand_path(basepath)
       # read SCHEMA and build class index to find .mof files quickly
       @classes = Hash.new
       includes = [ Pathname.new(".") ]
@@ -33,23 +37,66 @@ module Wbem
               if @classes[$3]
                 raise "Dup #{$3} : #{@classes[$3]}"
               else
-                @classes[$3] = $1
+                @classes[$3] = { :path => $1 }
               end
             end
           end
         end
       end
-      @parser = MOF::Parser.new :style => :cim, :includes => includes
+      @parser = MOF::Parser.new :style => :cim, :includes => includes, :quiet => true
     end
   private
-    def generate mof, file
-      file = File.join(@classbase, File.basename(file, ".mof") + ".rb")
-      STDERR.puts "Generate #{file} for #{mof}"
+    #
+    # collect all (inherited) features
+    #
+    def collect_features mofclass, known = Hash.new
+      features = Array.new
+      if mofclass.superclass
+        features += collect_features(@classes[mofclass.superclass][:mof], known)
+      end
+      mofclass.features.each do |f|
+        override = known[f.name]
+        if (override)
+#          puts "Override #{override.name}"
+          features.delete override
+        end
+        known[f.name] = f
+        features << f
+      end
+      features
+    end
+    #
+    # generate method parameter information
+    # return nil if no parameters
+    #
+    def gen_method_parameters direction, parameters, file
+      return if parameters.empty?
+      file.print "#{direction.inspect} => ["
+      first = true
+      parameters.each do |p|
+        if first
+          first = false
+        else
+          file.print ", "
+        end
+        # [ <name>, <type>, <out>? ]
+        file.print "#{p.name.inspect}, #{p.type.to_sym.inspect}"
+      end
+      file.print "]"
+      return true
+    end
+    #
+    # generate .rb class declaration
+    #
+    def generate mofclass
+      require 'erb'
+      template = File.read(File.join(File.dirname(__FILE__), "class_template.erb"))
+      erb = ERB.new(template)
+      c = mofclass
+      code = erb.result(binding)
+      file = File.join(@basedir, mofclass.name + ".rb")
       File.open(file, "w+") do |f|
-        f.puts "module Wbem"
-        f.puts "  class #{mof.name}"
-        f.puts "  end"
-        f.puts "end"
+        f.puts code
       end
     end
   public
@@ -58,13 +105,13 @@ module Wbem
     #
     def class_for name, dir = nil
       mofname = name + ".mof"
-      classpath = File.join(@classbase, name)
+      classpath = File.join(@basedir, name)
       if (File.readable?(classpath)) # already generated ?
         require classpath
         return Object.const_get("Wbem").const_get(name)
       end
       # find .mof file
-      mofpath = @classes[name]
+      mofpath = @classes[name][:path] rescue nil
       unless mofpath # construct local path
         mofpath = mofname
         if dir
@@ -72,16 +119,16 @@ module Wbem
         end
       end
       # read .mof
-      puts "Reading mof from #{mofpath}"
+#      puts "Reading mof from #{mofpath}"
       mofs = @parser.parse [ QUALIFIERS, mofpath ]
       # Iterate over all parsed classes
       mofs[mofpath].classes.each do |mofclass|
         next unless mofclass.name == name
-        @classes[name] = mofpath
+        @classes[name] = { :path => mofpath, :mof => mofclass }
         if mofclass.superclass
           class_for mofclass.superclass
         end
-        generate mofclass, mofpath
+        generate mofclass
         require classpath
         return Object.const_get("Wbem").const_get(name)
       end

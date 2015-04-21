@@ -21,6 +21,7 @@ module Wbem
     def initialize url, auth_scheme = :basic
       @url = (url.is_a? URI) ? url : URI.parse(url)
       @auth_scheme = auth_scheme.to_s.to_sym rescue nil
+      @factory = Wbem::ClassFactory.new "/tmp"
     end
 
     def response_code
@@ -51,9 +52,23 @@ public
     # call-seq
     #   get Openwsman::EndPointReference -> Wbem::Instance
     #   get Sfcc::Cim::ObjectPath -> Wbem::Instance
-    #   get String -> Wbem::Instance
+    #   get EndPointReference-as-String -> Wbem::Instance
+    #   get ObjectPath-as-String -> Wbem::Instance
+    #   get "ClassName", "key" => "value", :namespace => "root/interop"
     #
-    def get instance_reference
+    def get instance_reference, keys = nil
+      if keys
+        if self.class == WsmanClient
+          uri = Openwsman.epr_uri_for "", instance_reference
+          instance_reference = Openwsman::EndPointReference.new(uri, nil, keys)
+        elsif self.class == CimxmlClient
+          namespace = keys.delete(:namespace) || "root/cimv2"
+          instance_reference = Sfcc::Cim::ObjectPath.new(namespace, instance_reference)
+          keys.each do |k,v|
+            instance_reference.add_key k, v
+          end
+        end
+      end
       case instance_reference
       when Openwsman::EndPointReference
         get_by_epr instance_reference
@@ -65,7 +80,7 @@ public
         elsif self.class == CimxmlClient
           get_by_objectpath CimxmlClient.parse_object_path(instance_reference)
         else
-          raise "Unsupported Wbem::get #{instance_reference.class} for CimXml"
+          raise "Unsupported Wbem::get #{instance_reference.class} for #{self.class}"
         end
       else
         raise "Unsupported Wbem::get #{instance_reference.class}"

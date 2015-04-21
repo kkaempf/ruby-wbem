@@ -14,12 +14,11 @@ class TestClassFactory < Test::Unit::TestCase
   def test_create_cim
     klass = @factory.class_for "CIM_ManagedElement"
     assert klass
-    puts "CLASS #{klass.class}"
-    assert klass.new.is_a? Wbem::CIM_ManagedElement
+    assert klass.new(nil,nil).is_a? Wbem::CIM_ManagedElement
   end
   def test_create_ips
     klass = @factory.class_for "IPS_KVMRedirectionSettingData"
     assert klass
-    assert klass.new.is_a? Wbem::IPS_KVMRedirectionSettingData
+    assert klass.new(nil,nil).is_a? Wbem::IPS_KVMRedirectionSettingData
   end
 end
