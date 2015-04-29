@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+#
+# genclassinfo
+#
+#  Generate Ruby class templates
+#
+# Copyright (c) 2015 Klaus Kämpf <kkaempf@suse.de>
+#
+# Licensed under the Ruby license
+#
+# == Usage
+#
+# genclassinfo [-d] [-h] [-q] [-I <includedir>] [-o <output>] <moffile> [<moffile> ...]
+#
+# -d:
+#   turn on debugging
+# -h:
+#   show (this) help
+# -q:
+#   be quiet
+# -I <includedir>
+#   additional include directories to search
+# -o <outputdir>
+#   directory to write generated files, defaults to 'generated'
+# <moffile>
+#   .mof files to read
+#
+
+require 'rubygems'
+
+require 'mof'
+require 'pathname'
+require 'fileutils'
+
+$:.push(File.join(File.dirname(__FILE__), '..', 'lib'))
+
+require 'wbem'
+
+#--------------------------------------------------------------------
+
+@factory = Wbem::ClassFactory.new Dir.getwd
+
+ARGV.each do |c|
+  @factory.class_for c
+end
