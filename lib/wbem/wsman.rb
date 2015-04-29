@@ -34,8 +34,8 @@ module Openwsman
     end
     def to_s
       "Fault code #{@fault.code}, subcode #{@fault.subcode}" +
-      "\n\treason #{@fault.reason}" +
-      "\n\tdetail #{@fault.detail}"
+      "\n\treason \"#{@fault.reason}\"" +
+      "\n\tdetail \"#{@fault.detail}\""
     end
   end
   #
@@ -70,10 +70,10 @@ module Wbem
   #
   class Instance
     def initialize client, epr_or_uri, node
-#      STDERR.puts "Wsman::Instance.new @node #{node.class}"
+#      STDERR.puts "Wsman::Instance.new epr_or_uri #{epr_or_uri}"
       @node = node.body.child rescue node
 #      STDERR.puts "Wsman::Instance.new @node #{@node.class}"
-      @epr = (epr_or_uri.is_a? Openwsman::EndPointReference) ? epr_or_uri : Openwsman::EndPointReference.new(epr_or_uri) if epr
+      @epr = (epr_or_uri.is_a? Openwsman::EndPointReference) ? epr_or_uri : Openwsman::EndPointReference.new(epr_or_uri) if epr_or_uri
       @client = client
     end
     def classname
@@ -96,104 +96,56 @@ module Wbem
     end
     #
     # to_s - stringify
-    #    
+    #
     def to_s
-      "Instance #{@client}\n\t#{@epr}\n\t#{@node.to_xml}"
+      s = ""
+      @node.each do |child|
+        s << "\t" << child.name << ": " << child.text << "\n"
+      end
+      s
     end
-    
-    def invoke name, method, args
-      STDERR.puts "Wsman::Instance#invoke #{name}(#{args.inspect})"
-      result_type = method[:type]
-      parameters = method[:parameters] || {}
-      input = parameters[:in]
-      output = parameters[:out]
+    #
+    # Instance#invoke
+    #   name => String
+    #   type => [ :uint32, 
+    #             [ "RequestedState", :uint16, :in ],
+    #             [ "Job", :class, :out ],
+    #             [ "TimeoutPeriod", :dateTime, :in ],
+    #           ]
+    #   args => Array
+    #
+    def invoke name, type, args
+      STDERR.puts "#{__FILE__}: #{self.class}#invoke #{name}<#{type}>(#{args.inspect})"
+      result_type = type.shift
       argsin = {}
-      i = 0
-      if input
-        while i < input.size
-          value = args.shift
-          raise "Argument for #{input[i]} is nil, not allowed !" unless value
-          argsin[input[i]] = value
-          # FIXME more typecheck of args ?
-          i += 2
+      argsout = {}
+      while !type.empty?
+        argname, argtype, direction = type.shift
+        value = args.shift
+        case direction
+        when :in
+          argsin[argname] = Wbem::Conversion.from_ruby( argtype, value )
+        when :out
+          argsout[argname] = value
+        else
+          raise "Arg #{argname} of #{self.class}.#{name} has bad direction #{direction.inspect}"
         end
       end
-      STDERR.puts "\n\tproperties #{argsin.inspect}\n" if Wbem.debug
+      STDERR.puts "\tproperties #{argsin.inspect}" if Wbem.debug
+      STDERR.puts "\targsout #{argsout.inspect}" if Wbem.debug
+      options = Openwsman::ClientOptions.new
+      options.set_dump_request
       options.properties = argsin
-      #
-      # output parameters ?
-      #
-      argsout = nil
-      if output
-        if args.empty?
-          raise "Function #{name} has output arguments, please add an empty hash to the call"
-        end
-        argsout = args.shift
-        unless argsout.kind_of? Hash
-          raise "Function #{name} has output arguments, last argument must be a Hash"
-        end
-        unless args.empty?
-          raise "Function call to #{name} has excess arguments"
-        end
+      @epr.each do |k,v|
+        options.add_selector( k, v )
       end
-      STDERR.puts "\n\targsout #{argsout.inspect}\n" if Wbem.debug
-#Openwsman.debug = -1
-      STDERR.puts "\n\tinvoke #{uri}.#{name}\n" if Wbem.debug
-      res = @client.client.invoke(options, uri, name.to_s)
+      STDERR.puts "\tinvoke" if Wbem.debug
+      res = @client.client.invoke(options, @epr.resource_uri, name.to_s)
+      raise "Invoke failed with: #{@client.fault_string}" unless res
       raise Openwsman::Exception.new(res) if res.fault?
       STDERR.puts "\n\tresult #{res.to_xml}\n" if Wbem.debug
       result = res.find(uri, "#{name}_OUTPUT").find(uri, "ReturnValue").text
-      case result_type
-      when :boolean
-        result == "true" ? true : false
-      when :uint8, :uint16, :uint32, :uint64
-        result.to_i
-      when :string
-        result
-      when :float
-        result.to_f
-      when :datetime
-      else
-        raise "Unsupported result_type #{result_type.inspect}"
-      end
-    end
-    #
-    # Instance#<property>
-    # Instance#<method>(<args>)
-    #
-    def method_missing name, *args
-      # http://stackoverflow.com/questions/8960685/ruby-why-does-puts-call-to-ary
-      raise NoMethodError if name == :to_ary
-      STDERR.puts "Wsman::Instance#method_missing #{name}(#{args.inspect})"
-      if args.empty?
-        # try property first
-        res = @node.send name
-        return res.text if res
-      end
-      # try as method invocation
-      options = Openwsman::ClientOptions.new
-      options.set_dump_request if Wbem.debug
-      selectors = {}
-      @epr.each do |k,v|
-        selectors[k] = v
-      end
-      options.selectors = selectors # instance key properties
-      uri = @epr.resource_uri
-	
-      #
-      # get method input parameter information
-      #
-      classname = @epr.classname
-      s = "mof/#{classname}"
-      begin
-        require s
-      rescue LoadError
-        raise RuntimeError.new "Cannot load #{s} for type information"
-      end
-      methods = MOF.class_eval "#{classname}::METHODS"
-      method = methods[name.to_s]
-      raise RuntimeError.new("Unknown method #{name} for #{classname}") unless method
-      invoke name, method, args
+      Wbem::Conversion.to_ruby result_type, result
     end
   end
   
@@ -257,15 +209,18 @@ private
   #
   def get_by_epr epr
     options = Openwsman::ClientOptions.new
-    epr.each do |k,v|
-      options.add_selector( k, v )
-    end        
-    doc = client.get( options, epr.resource_uri )
+    options.set_dump_request if Wbem.debug
+    puts "***\t@client.get_from_epr #{epr.GroupComponent}"
+    doc = @client.get_from_epr( options, epr )
+    unless doc
+      raise RuntimeError.new "Identify failed: HTTP #{@client.response_code}, Err #{@client.last_error}:#{@client.fault_string}"
+    end
+    puts doc.to_xml if Wbem.debug
     if doc.fault?
-      raise Openwsman::Fault.new doc
+      raise Openwsman::Fault.new(doc).to_s
     end
     klass = @factory.class_for epr.classname
-    klass.new doc, self, epr
+    klass.new self, epr, doc
   end
 
 public
@@ -274,7 +229,7 @@ public
   def initialize uri, auth_scheme = nil
     super uri, auth_scheme
     @url.path = "/wsman" if @url.path.nil? || @url.path.empty?
-#    Openwsman::debug = -1
+    Openwsman::debug = -1 if Wbem.debug
     STDERR.puts "WsmanClient connecting to #{uri}, auth #{@auth_scheme.inspect}" if Wbem.debug
 
     @client = Openwsman::Client.new @url.to_s
@@ -403,7 +358,7 @@ public
       items = result.Items rescue nil
       if items
         items.each do |inst|
-          yield Wbem::Instance.new(inst, self, uri)
+          yield Wbem::Instance.new(self, uri, inst)
         end
       end
       context = result.context
@@ -497,8 +452,7 @@ public
     else
       uri = epr_uri_for(namespace, classname)
     end
-    @options.flags = Openwsman::FLAG_ENUMERATION_ENUM_EPR # get EPRs
-    @options.flags = Openwsman::FLAG_ENUMERATION_OPTIMIZATION
+    @options.flags = Openwsman::FLAG_ENUMERATION_ENUM_EPR | Openwsman::FLAG_ENUMERATION_OPTIMIZATION
     @options.max_elements = 999
     @options.cim_namespace = namespace if @product == :openwsman
     @options.set_dump_request if Wbem.debug
@@ -556,8 +510,8 @@ public
     STDERR.puts "@client.get(namepace '#{@options.cim_namespace}', props #{properties.inspect}, uri #{uri}" if Wbem.debug
     res = @client.get(@options, uri)
     raise Openwsman::Exception.new res if res.fault?
-    Wbem::Instance.new res, self, Openwsman::EndPointReference.new(uri, "", properties)
+    Wbem::Instance.new self, Openwsman::EndPointReference.new(uri, "", properties), res
   end
 
-end
-end # module
+end # class WsmanClient
+end # module Wbem

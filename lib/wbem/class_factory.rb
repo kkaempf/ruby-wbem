@@ -46,25 +46,40 @@ module Wbem
       @parser = MOF::Parser.new :style => :cim, :includes => includes, :quiet => true
     end
   private
+
     #
-    # collect all (inherited) features
+    # find_and_parse_superclass_of
     #
-    def collect_features mofclass, known = Hash.new
-      features = Array.new
-      if mofclass.superclass
-        features += collect_features(@classes[mofclass.superclass][:mof], known)
-      end
-      mofclass.features.each do |f|
-        override = known[f.name]
-        if (override)
-#          puts "Override #{override.name}"
-          features.delete override
+    # Find the superclass name of a class, parse its mof file
+    # returns Hash of { classname -> CIM::Class }
+    #
+
+    def find_and_parse_superclass_of c, options
+      superclasses = {}
+      # parent unknown
+      #  try parent.mof
+      begin
+        parser = MOF::Parser.new options
+        result = parser.parse [QUALIFIERS, "qualifiers_intel.mof", "#{c.superclass}.mof"]
+        if result
+          result.each_value do |r|
+            r.classes.each do |parent|
+              if parent.name == c.superclass
+                c.parent = parent
+                superclasses[parent.name] = parent
+                superclasses.merge!(find_and_parse_superclass_of(parent,options)) if parent.superclass
+              end
+            end
+          end
+        else
+          $stderr.puts "Warn: Parent #{c.superclass} of #{c.name} not known"
         end
-        known[f.name] = f
-        features << f
+      rescue Exception => e
+        parser.error_handler e
       end
-      features
+      superclasses
     end
+
     #
     # generate method parameter information
     # return nil if no parameters
@@ -88,13 +103,12 @@ module Wbem
     #
     # generate .rb class declaration
     #
-    def generate mofclass
+    def generate name
       require 'erb'
       template = File.read(File.join(File.dirname(__FILE__), "class_template.erb"))
       erb = ERB.new(template)
-      c = mofclass
       code = erb.result(binding)
-      file = File.join(@basedir, mofclass.name + ".rb")
+      file = File.join(@basedir, name + ".rb")
       File.open(file, "w+") do |f|
         f.puts code
       end
@@ -118,21 +132,24 @@ module Wbem
           mofpath = File.join(dir, mofpath)
         end
       end
-      # read .mof
-#      puts "Reading mof from #{mofpath}"
-      mofs = @parser.parse [ QUALIFIERS, mofpath ]
-      # Iterate over all parsed classes
-      mofs[mofpath].classes.each do |mofclass|
-        next unless mofclass.name == name
-        @classes[name] = { :path => mofpath, :mof => mofclass }
-        if mofclass.superclass
-          class_for mofclass.superclass
+      mof = @classes[name][:mof] rescue nil
+      unless mof
+        # read .mof
+        puts "Reading mof from #{mofpath}" if Wbem.debug
+        mofs = @parser.parse [ QUALIFIERS, "qualifiers_intel.mof", mofpath ]
+#        puts "==> #{mofs.inspect}"
+        # Iterate over all parsed classes
+        mofs[mofpath].classes.each do |mofclass|
+          next unless mofclass.name == name
+          @classes[name] = { :path => mofpath, :mof => mofclass }
+          if mofclass.superclass
+            class_for mofclass.superclass
+          end
         end
-        generate mofclass
-        require classpath
-        return Object.const_get("Wbem").const_get(name)
       end
-      nil
+      generate name
+      require classpath
+      return Object.const_get("Wbem").const_get(name)
     end # def create
   end # class ClassFactory
 end # module Wbem

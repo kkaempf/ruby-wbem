@@ -47,6 +47,14 @@ public
     end
 
     #
+    # Enumerate class refs
+    # Returns Array of Instance References (Sfcc::Cim::ObjectPath or Openwsman::EndPointReference)
+    #
+    def enumerate classname
+      raise "#{self.class}.enumerate not implemented"
+    end
+
+    #
     # get instance by reference
     #
     # call-seq
@@ -71,6 +79,7 @@ public
       end
       case instance_reference
       when Openwsman::EndPointReference
+        puts "get_by_epr #{instance_reference.to_xml}"
         get_by_epr instance_reference
       when Sfcc::Cim::ObjectPath
         get_by_objectpath instance_reference
