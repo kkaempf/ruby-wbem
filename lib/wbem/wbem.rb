@@ -77,9 +77,9 @@ public
           end
         end
       end
+      puts "@client.get #{instance_reference.class}..."
       case instance_reference
       when Openwsman::EndPointReference
-        puts "get_by_epr #{instance_reference.to_xml}"
         get_by_epr instance_reference
       when Sfcc::Cim::ObjectPath
         get_by_objectpath instance_reference

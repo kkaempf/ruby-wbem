@@ -21,12 +21,12 @@ end
 
 url = ARGV.shift
 if url == "-d"
-  Wbem.debug = 99
+  Wbem.debug = -1
   url = ARGV.shift
 end
 client = connect url
 eprs = client.instance_names "", ARGV.shift
 eprs.each do |epr|
-#  puts "Found #{epr.to_xml}"
+  puts "\nFound #{epr.to_xml}\n"
   puts "#{client.get(epr)}\n"
 end

@@ -210,7 +210,7 @@ private
   def get_by_epr epr
     options = Openwsman::ClientOptions.new
     options.set_dump_request if Wbem.debug
-    puts "***\t@client.get_from_epr #{epr.GroupComponent}"
+    puts "***\t@client.get_by_epr #{epr.GroupComponent}\n"
     doc = @client.get_from_epr( options, epr )
     unless doc
       raise RuntimeError.new "Identify failed: HTTP #{@client.response_code}, Err #{@client.last_error}:#{@client.fault_string}"
