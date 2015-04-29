@@ -57,7 +57,7 @@ def sol_stop client
     instance.RequestStateChange(32768)
   when 32771
     # SOL and IDE-R are enabled
-    instance.RequestStateChange(32769,nil,0)
+    instance.RequestStateChange(32769)
   when 32768
     # SOL and IDE-R are disabled
   when 32769
