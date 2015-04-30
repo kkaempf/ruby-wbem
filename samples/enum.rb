@@ -27,6 +27,6 @@ end
 client = connect url
 eprs = client.instance_names "", ARGV.shift
 eprs.each do |epr|
-  puts "\nFound #{epr.to_xml}\n"
-  puts "#{client.get(epr)}\n"
+  instance = client.get(epr)
+  puts "#{instance.class}: #{instance}\n"
 end

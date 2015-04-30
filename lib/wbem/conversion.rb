@@ -2,6 +2,8 @@
 # Type conversion
 #
 
+require 'openwsman'
+
 module Wbem
   class Conversion
   #
@@ -86,21 +88,33 @@ module Wbem
     # CIM -> Ruby
     #
     def self.to_ruby type, value
+      text = case value
+             when Openwsman::XmlNode
+               value.text
+             when String
+               value
+             else
+               value.to_s
+             end
       case type
       when :null,:void
         nil
       when :boolean
-        value == 'true'
+        text == 'true'
       when :char16
-        value.to_i
+        text.to_i
       when :string
-        value.to_s
+        text
       when :uint8,:sint8,:uint16,:sint16,:uint32,:sint32,:uint64,:sint64
-        value.to_i
+        text.to_i
       when :real32,:real64
-        value.to_f
+        text.to_f
       when :dateTime
-        Wbem::Conversion.cimdatetime_to_ruby value.to_s
+        Wbem::Conversion.cimdatetime_to_ruby text
+      when :class
+        puts "to_ruby :class, #{value.to_xml}"
+        # assume EndpointReference
+        Openwsman::EndPointReference.new(value.to_xml).to_s
       #      when :class
       #      when :reference
       #      when :array

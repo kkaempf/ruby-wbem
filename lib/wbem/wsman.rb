@@ -84,7 +84,7 @@ module Wbem
     #
     def attributes
       @node.each do |node|
-        STDERR.puts "Wsman::Instance #{node}"
+#        STDERR.puts "Wsman::Instance #{node}"
         yield [ node.name, node.text ]
       end
     end
@@ -92,15 +92,25 @@ module Wbem
     # access attribute by name
     #
     def [] name
-      @node.find(nil, name.to_s).text rescue nil
+      node = @node.find(nil, name.to_s) rescue nil
+      return nil unless node
+      begin
+        type = _typemap()[name]
+      rescue
+        raise "Property #{name} of #{self.class} has unknown type"
+      end
+      Wbem::Conversion.to_ruby type, node
     end
     #
     # to_s - stringify
     #
     def to_s
-      s = ""
+      s = "#{@epr.classname}\n"
       @node.each do |child|
-        s << "\t" << child.name << ": " << child.text << "\n"
+        s << "\t" << child.name << ": " 
+        v = self[child.name]
+        s << v if v
+        s << "\n"
       end
       s
     end
@@ -115,7 +125,7 @@ module Wbem
     #   args => Array
     #
     def invoke name, type, args
-      STDERR.puts "#{__FILE__}: #{self.class}#invoke #{name}<#{type}>(#{args.inspect})"
+#      STDERR.puts "#{__FILE__}: #{self.class}#invoke #{name}<#{type}>(#{args.inspect})"
       result_type = type.shift
       argsin = {}
       argsout = {}
@@ -210,7 +220,7 @@ private
   def get_by_epr epr
     options = Openwsman::ClientOptions.new
     options.set_dump_request if Wbem.debug
-    puts "***\t@client.get_by_epr #{epr.GroupComponent}\n"
+#    puts "***\t@client.get_by_epr #{epr.GroupComponent}\n"
     doc = @client.get_from_epr( options, epr )
     unless doc
       raise RuntimeError.new "Identify failed: HTTP #{@client.response_code}, Err #{@client.last_error}:#{@client.fault_string}"

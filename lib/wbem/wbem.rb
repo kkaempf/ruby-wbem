@@ -77,7 +77,7 @@ public
           end
         end
       end
-      puts "@client.get #{instance_reference.class}..."
+      puts "@client.get #{instance_reference.class}..." if Wbem.debug
       case instance_reference
       when Openwsman::EndPointReference
         get_by_epr instance_reference
