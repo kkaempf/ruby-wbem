@@ -131,13 +131,20 @@ module Wbem
       result_type = type.shift
       argsin = {}
       argsout = {}
-      while !type.empty?
+      loop do
+        break if args.empty?
+        if type.empty?
+          raise "Excess argument '#{args.shift}' at pos #{argsin.size + argsout.size + 1} in call to #{self.class}.#{name}"
+        end
         argname, argtype, direction = type.shift
         value = args.shift
         case direction
         when :in
           argsin[argname] = Wbem::Conversion.from_ruby( argtype, value )
         when :out
+          unless value.nil? || value.is_a?(:symbol)
+            raise "Argument '#{argname}' of #{self.class}.#{name} is 'out', pass nil to symbol instead of value"
+          end
           argsout[argname] = value
         else
           raise "Arg #{argname} of #{self.class}.#{name} has bad direction #{direction.inspect}"
