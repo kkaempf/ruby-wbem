@@ -112,9 +112,21 @@ module Wbem
       when :dateTime
         Wbem::Conversion.cimdatetime_to_ruby text
       when :class
-        puts "to_ruby :class, #{value.to_xml}"
-        # assume EndpointReference
-        Openwsman::EndPointReference.new(value.to_xml).to_s
+#        puts "to_ruby :class, #{value.to_xml}"
+        uri = value.ResourceURI
+        if uri # assume ResourceURI and SelectorSet
+#          puts "to_ruby :class uri #{uri.text}"
+          epr = Openwsman::EndPointReference.new(uri.text)
+          value.SelectorSet.each do |s|
+            k = s.attr("Name").value
+            v = s.text
+            epr.add_selector(k, v)
+          end
+          epr
+        else
+        # try EndpointReference
+          Openwsman::EndPointReference.new(value.to_xml)
+        end
       #      when :class
       #      when :reference
       #      when :array
