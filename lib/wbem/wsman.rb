@@ -238,7 +238,7 @@ private
     if doc.fault?
       raise Openwsman::Fault.new(doc).to_s
     end
-    klass = @factory.class_for epr.classname
+    klass = factory.class_for epr.classname
     klass.new self, epr, doc
   end
 

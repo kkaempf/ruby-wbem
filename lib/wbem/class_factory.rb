@@ -19,8 +19,8 @@ module Wbem
     #
     # Constructor
     #
-    def initialize basepath
-      @basedir = File.expand_path(basepath)
+    def initialize basepath = nil
+      @basedir = File.expand_path(File.join(basepath || Dir.getwd, "wbem"))
       # read SCHEMA and build class index to find .mof files quickly
       @classes = Hash.new
       includes = [ Pathname.new(".") ]
