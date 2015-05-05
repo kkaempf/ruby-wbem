@@ -68,14 +68,15 @@ module Wbem
     def method_missing name, *args
       # http://stackoverflow.com/questions/8960685/ruby-why-does-puts-call-to-ary
       raise NoMethodError if name == :to_ary
+      name = name.to_s
       assign = false
       if name[-1,1] == '=' # assignment
         name = name[0...-1]
         assign = true
       end
-      type = TYPEMAP[name.to_s]
+      type = TYPEMAP[name]
       if type.is_a? Array
-        invoke(name.to_s, type, args)
+        invoke(name, type, args)
       else
         return nil unless type # unknown property
         if assign
