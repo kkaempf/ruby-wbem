@@ -38,7 +38,7 @@ require 'wbem'
 
 #--------------------------------------------------------------------
 
-@factory = Wbem::ClassFactory.new Dir.getwd
+@factory = Wbem::ClassFactory.new
 
 ARGV.each do |c|
   @factory.class_for c
