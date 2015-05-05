@@ -101,7 +101,7 @@ end
 target = nil
 loop do
   target = ARGV.shift
-  break unless target[0,1] == '-'
+  break unless target && target[0,1] == '-'
   case target[1..-1]
   when 'd'
     Wbem.debug = 99
