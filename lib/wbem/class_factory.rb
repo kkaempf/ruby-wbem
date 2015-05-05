@@ -108,6 +108,7 @@ module Wbem
       template = File.read(File.join(File.dirname(__FILE__), "class_template.erb"))
       erb = ERB.new(template)
       code = erb.result(binding)
+      Dir.mkdir(@basedir) unless File.directory?(@basedir)
       file = File.join(@basedir, name + ".rb")
       File.open(file, "w+") do |f|
         f.puts code
