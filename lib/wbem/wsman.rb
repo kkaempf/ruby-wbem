@@ -99,6 +99,7 @@ module Wbem
       rescue
         raise "Property #{name} of #{self.class} has unknown type"
       end
+#      puts "#{self.class}[#{name}]: #{node.name}"
       Wbem::Conversion.to_ruby type, node
     end
     #
@@ -109,7 +110,7 @@ module Wbem
       @node.each do |child|
         s << "\t" << child.name << ": " 
         v = self[child.name]
-        s << v if v
+        s << v.to_s if v
         s << "\n"
       end
       s
