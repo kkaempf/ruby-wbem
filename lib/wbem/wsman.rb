@@ -92,14 +92,15 @@ module Wbem
     # access attribute by name
     #
     def [] name
-      node = @node.find(nil, name.to_s) rescue nil
+      name = name.to_s
+      node = @node.find(nil, name) rescue nil
       return nil unless node
       begin
         type = _typemap()[name]
       rescue
         raise "Property #{name} of #{self.class} has unknown type"
       end
-#      puts "#{self.class}[#{name}]: #{node.name}"
+#      puts "#{self.class}[#{name}]: #{node.name}<#{type.inspect}>"
       Wbem::Conversion.to_ruby type, node
     end
     #
