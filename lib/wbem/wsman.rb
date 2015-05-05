@@ -146,7 +146,7 @@ module Wbem
       STDERR.puts "\tproperties #{argsin.inspect}" if Wbem.debug
       STDERR.puts "\targsout #{argsout.inspect}" if Wbem.debug
       options = Openwsman::ClientOptions.new
-      options.set_dump_request
+      options.set_dump_request if Wbem.debug
       options.properties = argsin
       @epr.each do |k,v|
         options.add_selector( k, v )
