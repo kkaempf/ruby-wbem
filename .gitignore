@@ -10,4 +10,4 @@ mkmf.log
 *~
 *.o
 Gemfile.lock
-wbem
+test/wbem
