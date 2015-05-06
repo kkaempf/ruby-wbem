@@ -1,10 +1,11 @@
-$: << File.dirname(__FILE__)
+DIR = File.dirname(__FILE__)
+$: << DIR
 require 'helper'
 require 'wbem'
 
 class TestClassFactory < Test::Unit::TestCase
   def setup
-    @factory = Wbem::ClassFactory.new File.join(File.dirname(__FILE__), "wbem")
+    @factory = Wbem::ClassFactory.new DIR
   end
   #def teardown
   #end
@@ -12,12 +13,12 @@ class TestClassFactory < Test::Unit::TestCase
     assert @factory
   end
   def test_create_cim
-    klass = @factory.class_for "CIM_ManagedElement"
+    klass = @factory.gen_class "CIM_ManagedElement"
     assert klass
     assert klass.new(nil,nil).is_a? Wbem::CIM_ManagedElement
   end
   def test_create_ips
-    klass = @factory.class_for "IPS_KVMRedirectionSettingData"
+    klass = @factory.gen_class "IPS_KVMRedirectionSettingData"
     assert klass
     assert klass.new(nil,nil).is_a? Wbem::IPS_KVMRedirectionSettingData
   end
