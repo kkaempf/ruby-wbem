@@ -2,7 +2,7 @@
   # @classes[name] = { :path => mofpath, :mof => mofclass }
 
   def collect_superclasses name
-    classdata = @classes[name]
+    classdata = @classmap[name]
     raise "No such class: #{name}" unless classdata
     mofclass = classdata[:mof]
     superclass = mofclass.superclass
