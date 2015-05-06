@@ -38,7 +38,7 @@ require 'wbem'
 
 def usage msg=nil
   STDERR.puts "Err: #{msg}" if msg
-  STDERR.puts "Usage: genclassinfo <class> [ <class> ...]"
+  STDERR.puts "Usage: genclassinfo [-d] <class> [ <class> ...]"
   exit (msg)?1:0
 end
 
@@ -51,5 +51,9 @@ if ARGV.empty?
 end
 
 ARGV.each do |c|
-  @factory.class_for c
+  if c == "-d"
+    Wbem::debug = 1
+    next
+  end
+  @factory.gen_class c
 end
