@@ -33,7 +33,6 @@ end
 
 def sol_start client
   instance = client.get "AMT_RedirectionService", "Name" => "Intel(r) AMT Redirection Service"
-  puts "Found #{instance.EnabledState}"
   case instance.EnabledState
   when 32770
     puts "SOL is enabled and IDE-R is disabled"
@@ -50,7 +49,6 @@ end
 
 def sol_stop client
   instance = client.get "AMT_RedirectionService", "Name" => "Intel(r) AMT Redirection Service"
-  puts "Found #{instance}"
   case instance.EnabledState
   when 32770
     # SOL is enabled and IDE-R is disabled
