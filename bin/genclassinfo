@@ -36,9 +36,19 @@ $:.push(File.join(File.dirname(__FILE__), '..', 'lib'))
 
 require 'wbem'
 
+def usage msg=nil
+  STDERR.puts "Err: #{msg}" if msg
+  STDERR.puts "Usage: genclassinfo <class> [ <class> ...]"
+  exit (msg)?1:0
+end
+
 #--------------------------------------------------------------------
 
 @factory = Wbem::ClassFactory.new
+
+if ARGV.empty?
+  usage
+end
 
 ARGV.each do |c|
   @factory.class_for c
