@@ -114,7 +114,7 @@ module Wbem
               path = $1
               names = $2.split("/")
               name = names[1] || names[0]
-              next unless name =~ /_/ # class name must have underscore
+              next unless name =~ /_/ # class name must have underscore (rules out 'qualifiers.mof')
 #              puts "#{path}:#{name}"
               next if !allow_cim && name =~ /^CIM_/ # skip CIM_ mofs unless allowed
               if @classmap[name]
@@ -126,7 +126,7 @@ module Wbem
           end
         end
       end
-      STDERR.puts "Found MOFs for #{@classmap.size} classes"
+      STDERR.puts "Found MOFs for #{@classmap.size} classes" if Wbem.debug
       @classmap
     end
 

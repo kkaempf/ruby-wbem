@@ -1,3 +1,11 @@
+== 0.4.0
+
+* Add bin/genclassinfo to generate Ruby classes from MOF
+* Add client.get for fetching instances with keys
+* Properly handle EndpointReferences
+* Add Instance#invoke, based on type information from generated Ruby
+  class
+
 == 0.3.2
 
 * Add Client#get to get an instance by ObjectPath
