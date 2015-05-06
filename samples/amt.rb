@@ -40,9 +40,11 @@ def sol_start client
     puts "SOL and IDE-R are enabled"
   when 32768
     # SOL and IDE-R are disabled
+    puts "Enabling SOL"
     instance.RequestStateChange(32770)
   when 32769
     # SOL is disabled and IDE-R is enabled
+    puts "Enabling SOL"
     instance.RequestStateChange(32771)
   end
 end
@@ -52,14 +54,16 @@ def sol_stop client
   case instance.EnabledState
   when 32770
     # SOL is enabled and IDE-R is disabled
+    puts "Disabling SOL"
     instance.RequestStateChange(32768)
   when 32771
     # SOL and IDE-R are enabled
+    puts "Disabling SOL"
     instance.RequestStateChange(32769)
   when 32768
-    # SOL and IDE-R are disabled
+    puts "SOL and IDE-R are disabled"
   when 32769
-    # SOL is disabled and IDE-R is enabled
+    puts "SOL is disabled and IDE-R is enabled"
   end
 end
 
