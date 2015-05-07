@@ -5,7 +5,7 @@ require 'wbem'
 
 class TestClassFactory < Test::Unit::TestCase
   def setup
-    @factory = Wbem::ClassFactory.new DIR
+    @factory = Wbem::ClassFactory.new File.join(DIR, "wbem")
   end
   #def teardown
   #end
