@@ -25,7 +25,7 @@ if url == "-d"
   url = ARGV.shift
 end
 client = connect url
-eprs = client.instance_names "", ARGV.shift
+eprs = client.instance_names nil, ARGV.shift
 eprs.each do |epr|
   instance = client.get(epr)
   puts "#{instance.class}: #{instance}\n"
