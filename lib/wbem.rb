@@ -22,8 +22,6 @@ module Wbem
 
   class Client
     require 'uri'
-    require 'wbem/wsman'
-    require 'wbem/cimxml'
 
     #
     # Wbem::Client.connect uri, protocol = nil
@@ -49,11 +47,13 @@ module Wbem
         unless protocol_given
           u.port = (u.scheme == "http") ? 5985 : 5986
         end
+        require 'wbem/wsman'
         return WsmanClient.new u, auth_scheme
       when "cimxml"
         unless protocol_given
           u.port = (u.scheme == "http") ? 5988 : 5989
         end
+        require 'wbem/cimxml'
         return CimxmlClient.new u
       end
       # no connect, check known ports
