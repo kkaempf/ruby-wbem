@@ -16,12 +16,16 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = ">= 1.3.6"
   s.add_development_dependency("yard", [">= 0.5"])
   s.add_dependency("sfcc", [">= 0.4.1"])
-  s.add_dependency("openwsman", [">= 2.3.2"])
+  s.add_dependency("openwsman", [">= 2.4.14"])
   s.add_dependency("cim", [">= 1.4.2"])
   s.add_dependency("mof", [">= 1.2.4"])
 
-  s.files        = Dir.glob("lib/**/*.rb") + %w(CHANGELOG.rdoc README.rdoc)
+  s.files         = `git ls-files`.split("\n")
+  s.files.reject! { |fn| fn == '.gitignore' }
   s.require_path = 'lib'
+  s.extra_rdoc_files    = Dir['README.rdoc', 'CHANGES.rdoc', 'MIT-LICENSE']
+  s.test_files    = `git ls-files -- test/*`.split("\n")
+  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
 
   s.post_install_message = <<-POST_INSTALL_MESSAGE
   ____
