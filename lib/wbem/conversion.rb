@@ -13,6 +13,7 @@ module Wbem
   #           01234567890123456789012345
   # East:     yyyymmddhhmmss.mmmmmm+utc -> Time (utc = offset in minutes)
   # West:     yyyymmddhhmmss.mmmmmm-utc -> Time
+  #           2011-11-01T00:00:00Z
   # Interval: ddddddddhhmmss.mmmmmm:000 -> Float (interval in seconds, with fraction)
   #
   def self.cimdatetime_to_ruby str
@@ -30,8 +31,16 @@ module Wbem
       off += str[8,2].to_i * 60 * 60 + str[10,2].to_i * 60 + str[12,2].to_i
       off += str[15,6].to_i / 1000
       return off
+    when nil
+      # 2011-11-01T00:00:00Z
+      t = Time.new(str[0,4].to_i, str[5,2].to_i, str[8,2].to_i, str[11,2].to_i, str[14,2].to_i, str[17,2].to_i, (str[19,1] == 'Z')?0:0)
     else
-      raise RCErrInvalidParameter.new(CMPI_RC_ERR_INVALID_PARAMETER, "Invalid CIM DateTime '#{str}'")
+      begin
+        require 'date'
+        DateTime.parse str
+      rescue
+        raise ::TypeError.new("Invalid CIM DateTime '#{str}'")
+      end
     end
   end
 
