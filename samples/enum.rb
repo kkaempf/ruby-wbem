@@ -16,7 +16,7 @@ end
 
 def connect url
   usage "<url> missing" unless url
-  return Wbem::Client.connect url, :wsman
+  return Wbem::Client.connect url
 end
 
 url = ARGV.shift
