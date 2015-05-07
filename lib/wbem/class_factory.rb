@@ -142,10 +142,11 @@ module Wbem
     #
     def class_for name
       begin
-        require "./#{CLASSDIR}/#{name}"
+        path = "#{@basedir}/#{name}"
+        require path
         return Object.const_get("Wbem").const_get(name)
       rescue LoadError
-        raise "Use 'genclass' of ruby-wbem to generate class '#{name}'"
+        raise "'#{path}.rb' not found, use 'genclass' of ruby-wbem to generate class '#{name}'"
       end
     end
     #
