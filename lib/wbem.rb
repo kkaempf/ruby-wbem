@@ -58,7 +58,7 @@ module Wbem
       end
       # no connect, check known ports
       case u.port
-      when 8888, 8889, 5985, 5986
+      when 8888, 8889, 5985, 5986, 16992
         return Wbem::Client.connect u, :wsman, auth_scheme
       when 5988, 5989
         return Wbem::Client.connect u, :cimxml, auth_scheme
