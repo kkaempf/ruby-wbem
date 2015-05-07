@@ -162,10 +162,12 @@ public
   # @param properties : Hash (optional)
   #
   def instance_names namespace, classname=nil, properties={}
+    # if namespace is unset, sfcc will generate invalid XML
+    namespace ||= "root/cimv2"
     case namespace
     when Sfcc::Cim::ObjectPath
       objectpath = namespace
-      namespace = objectpath.namespace
+      namespace = objectpath.namespace      
     else
       objectpath = objectpath namespace.to_s, classname, properties
     end
