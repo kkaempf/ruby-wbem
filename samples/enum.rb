@@ -1,5 +1,7 @@
 #
-# Managed iAMT
+# ruby-wbem sample code
+#
+# Enumerate instances
 #
 # Written by Klaus Kämpf 2015
 #
