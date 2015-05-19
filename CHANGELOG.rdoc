@@ -1,7 +1,11 @@
+== 0.5.0
+
+* Add client.get for fetching instances with keys in Cimxml
+
 == 0.4.0
 
 * Add bin/genclassinfo to generate Ruby classes from MOF
-* Add client.get for fetching instances with keys
+* Add client.get for fetching instances with keys in Wsman
 * Properly handle EndpointReferences
 * Add Instance#invoke, based on type information from generated Ruby
   class
