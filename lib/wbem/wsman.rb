@@ -347,6 +347,29 @@ public
   end
 
   #
+  # get instance by reference
+  #
+  # call-seq
+  #   get Openwsman::EndPointReference -> Wbem::Instance
+  #   get EndPointReference-as-String -> Wbem::Instance
+  #   get "ClassName", "key" => "value", :namespace => "root/interop"
+  #
+  def get instance_reference, keys = nil
+    if keys
+      uri = Openwsman.epr_uri_for "", instance_reference
+      instance_reference = Openwsman::EndPointReference.new(uri, nil, keys)
+    end
+    puts "@client.get #{instance_reference.class}..." if Wbem.debug
+    case instance_reference
+    when Openwsman::EndPointReference
+      get_by_epr instance_reference
+    when String
+      get_by_epr Openwsman::EndPointReference.new(instance_reference)
+    else
+      raise "Unsupported Wbem::get #{instance_reference.class}"
+    end
+  end
+  #
   # Return matching Wbem::Instance for first instance
   #  matching namespace, classname, properties
   # @param namespace : String or Sfcc::Cim::ObjectPath

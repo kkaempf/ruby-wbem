@@ -11,6 +11,7 @@
 module Wbem
   require 'wbem/class_factory'
   require 'wbem/conversion'
+  require 'wbem/wbem'
 
   @@debug = nil
   def Wbem.debug

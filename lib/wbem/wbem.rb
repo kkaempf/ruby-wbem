@@ -8,6 +8,10 @@
 # Licensed under the MIT license
 #
 module Wbem
+  # class forward declaration
+  class WbemClient; end
+  class WsmanClient < WbemClient; end
+  class CimxmlClient < WbemClient; end
   #
   # WbemClient - base class for CimxmlClient and WsmanClient
   #
@@ -69,10 +73,10 @@ public
     #
     def get instance_reference, keys = nil
       if keys
-        if self.class == WsmanClient
+        if self.class == Wbem::WsmanClient
           uri = Openwsman.epr_uri_for "", instance_reference
           instance_reference = Openwsman::EndPointReference.new(uri, nil, keys)
-        elsif self.class == CimxmlClient
+        elsif self.class == Wbem::CimxmlClient
           namespace = keys.delete(:namespace) || "root/cimv2"
           instance_reference = Sfcc::Cim::ObjectPath.new(namespace, instance_reference)
           keys.each do |k,v|

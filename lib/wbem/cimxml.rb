@@ -183,6 +183,32 @@ public
   end
 
   #
+  # get instance by reference
+  #
+  # call-seq
+  #   get Sfcc::Cim::ObjectPath -> Wbem::Instance
+  #   get ObjectPath-as-String -> Wbem::Instance
+  #   get "ClassName", "key" => "value", :namespace => "root/interop"
+  #
+  def get instance_reference, keys = nil
+    if keys
+      namespace = keys.delete(:namespace) || "root/cimv2"
+      instance_reference = Sfcc::Cim::ObjectPath.new(namespace, instance_reference)
+      keys.each do |k,v|
+        instance_reference.add_key k, v
+      end
+    end
+    puts "@client.get #{instance_reference.class}..." if Wbem.debug
+    case instance_reference
+    when Sfcc::Cim::ObjectPath
+      get_by_objectpath instance_reference
+    when String
+      get_by_objectpath CimxmlClient.parse_object_path(instance_reference)
+    else
+      raise "Unsupported Wbem::get #{instance_reference.class}"
+    end
+  end
+  #
   # Return matching Wbem::Instance for first instance
   #  matching namespace, classname, properties
   # @param namespace : String or Sfcc::Cim::ObjectPath
@@ -233,6 +259,7 @@ public
   # get instance by objectpath
   #
   def get_by_objectpath objpath
+    STDERR.puts "#{self.class}.get_by_objectpath #{objpath}" if Wbem.debug
     @client.get_instance(objpath)
   end
 end # class
