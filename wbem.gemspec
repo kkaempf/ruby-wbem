@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = ">= 1.3.6"
   s.add_development_dependency("yard", [">= 0.5"])
   s.add_dependency("sfcc", [">= 0.4.1"])
-  s.add_dependency("openwsman", [">= 2.4.14"])
+  s.add_dependency("openwsman", [">= 2.5.0"])
   s.add_dependency("cim", [">= 1.4.2"])
   s.add_dependency("mof", [">= 1.2.4"])
 
