@@ -16,7 +16,9 @@ require "cim"
 module Wbem
 
 class WsmanClient < WbemClient
-private
+  attr_reader :protocol_version, :product_vendor, :product_version
+            
+  private
   #
   # create end point reference URI
   #
