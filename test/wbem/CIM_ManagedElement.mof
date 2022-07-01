@@ -1,0 +1,4 @@
+module Wbem
+  class CIM_ManagedElement
+  end
+end
