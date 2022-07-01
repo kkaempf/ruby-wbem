@@ -15,6 +15,98 @@ require "cim"
 
 module Wbem
 
+  #
+  # Capture XmlDoc + WsmanClient as Instance
+  #
+  class Instance
+    def initialize client, epr_or_uri, node
+#      STDERR.puts "Wsman::Instance.new epr_or_uri #{epr_or_uri}"
+      @node = node.body.child rescue node
+#      STDERR.puts "Wsman::Instance.new @node #{@node.class}"
+      @epr = (epr_or_uri.is_a? Openwsman::EndPointReference) ? epr_or_uri : Openwsman::EndPointReference.new(epr_or_uri) if epr_or_uri
+      @client = client
+    end
+    def classname
+      @epr.classname
+    end
+    #
+    # attribute iterator
+    #
+    def attributes
+      @node.each do |node|
+        STDERR.puts "Wsman::Instance #{node}"
+        yield [ node.name, node.text ]
+      end
+    end
+    #
+    # access attribute by name
+    #
+    def [] name
+      @node.find(nil, name.to_s).text rescue nil
+    end
+    #
+    # to_s - stringify
+    #
+    def to_s
+      "Instance Client #{@client}\n\tEPR #{@epr}\n\tNode #{@node}"
+    end
+    #
+    # Instance#invoke
+    #   name => String
+    #   type => [ :uint32, 
+    #             [ "RequestedState", :uint16, :in ],
+    #             [ "Job", :class, :out ],
+    #             [ "TimeoutPeriod", :dateTime, :in ],
+    #           ]
+    #   args => Array
+    #
+    def invoke name, type, args
+      STDERR.puts "#{__FILE__}: #{self.class}#invoke #{name}<#{type}>(#{args.inspect})"
+      result_type = type.shift
+      argsin = {}
+      argsout = {}
+      while !type.empty?
+        argname, argtype, direction = type.shift
+        value = args.shift
+        case direction
+        when :in
+          argsin[argname] = value
+        when :out
+          argsout[argname] = value
+        else
+          raise "Arg #{argname} of #{self.class}.#{name} has bad direction #{direction.inspect}"
+        end
+      end
+      STDERR.puts "\tproperties #{argsin.inspect}" if Wbem.debug
+      STDERR.puts "\targsout #{argsout.inspect}" if Wbem.debug
+      options = Openwsman::ClientOptions.new
+      options.properties = argsin
+      @epr.each do |k,v|
+        options.add_selector( k, v )
+      end
+      options.set_dump_request
+      STDERR.puts "\tinvoke" if Wbem.debug
+      res = @client.client.invoke(options, @epr.resource_uri, name.to_s)
+      raise "Invoke failed with: #{@client.fault_string}" unless res
+      raise Openwsman::Exception.new(res) if res.fault?
+      STDERR.puts "\n\tresult #{res.to_xml}\n" if Wbem.debug
+      result = res.find(uri, "#{name}_OUTPUT").find(uri, "ReturnValue").text
+      case result_type
+      when :boolean
+        result == "true" ? true : false
+      when :uint8, :uint16, :uint32, :uint64
+        result.to_i
+      when :string
+        result
+      when :float
+        result.to_f
+      when :datetime
+      else
+        raise "Unsupported result_type #{result_type.inspect}"
+      end
+    end
+  end
+  
 class WsmanClient < WbemClient
   attr_reader :protocol_version, :product_vendor, :product_version
             
@@ -87,7 +179,7 @@ class WsmanClient < WbemClient
     if doc.fault?
       raise Openwsman::Fault.new(doc).to_s
     end
-    klass = factory.class_for epr.classname
+    klass = @factory.class_for epr.classname
     klass.new self, epr, doc
   end
 

@@ -59,6 +59,41 @@ module Wbem
           end
         end
       end
+      @parser = MOF::Parser.new :style => :cim, :includes => includes, :quiet => true
+    end
+  private
+
+    #
+    # find_and_parse_superclass_of
+    #
+    # Find the superclass name of a class, parse its mof file
+    # returns Hash of { classname -> CIM::Class }
+    #
+
+    def find_and_parse_superclass_of c, options
+      superclasses = {}
+      # parent unknown
+      #  try parent.mof
+      begin
+        parser = MOF::Parser.new options
+        result = parser.parse ["qualifiers.mof", "#{c.superclass}.mof"]
+        if result
+          result.each_value do |r|
+            r.classes.each do |parent|
+              if parent.name == c.superclass
+                c.parent = parent
+                superclasses[parent.name] = parent
+                superclasses.merge!(find_and_parse_superclass_of(parent,options)) if parent.superclass
+              end
+            end
+          end
+        else
+          $stderr.puts "Warn: Parent #{c.superclass} of #{c.name} not known"
+        end
+      rescue Exception => e
+        parser.error_handler e
+      end
+      superclasses
     end
 
     #
@@ -90,6 +125,7 @@ module Wbem
       erb = ERB.new(template)
       code = erb.result(binding)
       Dir.mkdir(@basedir) unless File.directory?(@basedir)
+      file = File.join(@basedir, name + ".rb")
       File.open(file, "w+") do |f|
         f.puts code
       end
@@ -154,10 +190,34 @@ module Wbem
     #
     def gen_class name
       mofname = name + ".mof"
-      classpath = File.join(@basedir, "#{name}.rb")
-      parse_with_ancestors name
-      generate name, classpath
-      class_for name
+      classpath = File.join(@basedir, name)
+      if (File.readable?(classpath)) # already generated ?
+        require classpath
+        return Object.const_get("Wbem").const_get(name)
+      end
+      # find .mof file
+      mofpath = @classes[name][:path] rescue nil
+      unless mofpath # construct local path
+        mofpath = mofname
+        if dir
+          mofpath = File.join(dir, mofpath)
+        end
+      end
+      # read .mof
+#      puts "Reading mof from #{mofpath}"
+      mofs = @parser.parse [ QUALIFIERS, mofpath ]
+      # Iterate over all parsed classes
+      mofs[mofpath].classes.each do |mofclass|
+        next unless mofclass.name == name
+        @classes[name] = { :path => mofpath, :mof => mofclass }
+        if mofclass.superclass
+          class_for mofclass.superclass
+        end
+        generate name
+        require classpath
+        return Object.const_get("Wbem").const_get(name)
+      end
+      nil
     end # def create
   end # class ClassFactory
 end # module Wbem

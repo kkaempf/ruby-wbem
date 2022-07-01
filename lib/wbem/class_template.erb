@@ -2,7 +2,7 @@
   # @classes[name] = { :path => mofpath, :mof => mofclass }
 
   def collect_superclasses name
-    classdata = @classmap[name]
+    classdata = @classes[name]
     raise "No such class: #{name}" unless classdata
     mofclass = classdata[:mof]
     superclass = mofclass.superclass
@@ -44,5 +44,50 @@ module Wbem
       TYPEMAP
     end
 
+
+    #
+    # Class constructor
+    #   client - client instance, used for method invocation
+    #            either a Wbem::CimxmlClient
+    #            or a Wbem::WsmanClient
+    #
+    #   instance_ref - instance reference
+    #                  either ObjectPath (Wbem::CimxmlClient) or
+    #                  EndPointReference (Wbem::WsmanClient)
+    #
+    #   instance_data - instance data
+    #                   Wbem::WsmanClient: Openwsman::XmlNode
+    #                   Wbem::CimxmlClient: nil (instance_ref has all information)
+    #
+    def initialize client, instance_ref, instance_data = nil
+      super
+    end
+    #
+    # method_missing
+    #   needs to be here to access TYPEMAP
+    #
+    def method_missing name, *args
+      # http://stackoverflow.com/questions/8960685/ruby-why-does-puts-call-to-ary
+      raise NoMethodError if name == :to_ary
+      assign = false
+      if name[-1,1] == '=' # assignment
+        name = name[0...-1]
+        assign = true
+      end
+      type = TYPEMAP[name.to_s]
+      if type.is_a? Array
+        invoke(name.to_s, type, args)
+      else
+        return nil unless type # unknown property
+        if assign
+          # property assignment
+          self[name] = Wbem::Conversion.from_ruby type, args[0]
+        else
+          # property read
+          value = self[name]
+          Wbem::Conversion.to_ruby type, value
+        end
+      end
+    end # method_missing
   end # class
 end # module
